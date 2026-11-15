@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<body>
+<aside th:fragment="sidebar" class="app-sidebar">
+    <a class="brand" th:href="${isAdmin} ? @{/admin/home} : (${isManager} ? @{/manager/home} : @{/home})">
+        <span class="brand-mark">C</span><span>Category<span class="brand-light">Hub</span></span>
+    </a>
+    <div class="nav-caption">WORKSPACE</div>
+    <a class="side-link" th:if="${isAdmin}" th:classappend="${activePath == '/admin/home'} ? 'active'" th:href="@{/admin/home}"><span>▦</span> Dashboard</a>
+    <a class="side-link" th:if="${isManager}" th:classappend="${activePath == '/manager/home'} ? 'active'" th:href="@{/manager/home}"><span>▦</span> Dashboard</a>
+    <a class="side-link" th:if="${isAdmin}" th:classappend="${#strings.contains(activePath, '/admin/category')} ? 'active'" th:href="@{/admin/category/list}"><span>▤</span> Danh mục</a>
+    <a class="side-link" th:if="${isManager}" th:classappend="${#strings.contains(activePath, '/manager/category')} ? 'active'" th:href="@{/manager/category/list}"><span>▤</span> Danh mục</a>
+    <a class="side-link" th:if="${isAdmin}" th:classappend="${#strings.contains(activePath, '/admin/products')} ? 'active'" th:href="@{/admin/products}"><span>▣</span> Sản phẩm</a>
+    <a class="side-link" th:if="${isManager}" th:classappend="${#strings.contains(activePath, '/manager/products')} ? 'active'" th:href="@{/manager/products}"><span>▣</span> Sản phẩm</a>
+    <a class="side-link" th:if="${isAdmin}" th:classappend="${#strings.contains(activePath, '/admin/videos')} ? 'active'" th:href="@{/admin/videos}"><span>▷</span> Video</a>
+    <a class="side-link" th:if="${isAdmin}" th:classappend="${#strings.contains(activePath, '/admin/users')} ? 'active'" th:href="@{/admin/users}"><span>♙</span> Tài khoản</a>
+    <a class="side-link" th:if="${isAdmin}" th:classappend="${#strings.contains(activePath, '/admin/orders')} ? 'active'" th:href="@{/admin/orders}"><span>▧</span> Đơn hàng</a>
+    <a class="side-link" th:unless="${isAdmin or isManager}" th:href="@{/home}"><span>⌂</span> Trang chủ</a>
+    <div class="nav-caption mt-4">TÀI KHOẢN</div>
+    <a class="side-link" th:href="@{/member/myaccount}"><span>◉</span> Thông tin tài khoản</a>
+    <a class="side-link" th:if="${!isAdmin and !isManager}" th:href="@{/member/orders}"><span>▧</span> Đơn hàng của tôi</a>
+    <form method="post" th:action="@{/logout}">
+        <button class="side-link side-button" type="submit"><span>↪</span> Đăng xuất</button>
+    </form>
+</aside>
+</body>
+</html>

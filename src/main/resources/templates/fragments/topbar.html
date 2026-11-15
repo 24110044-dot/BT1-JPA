@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<body>
+<header th:fragment="topbar" class="topbar">
+    <button class="btn btn-sm btn-outline-secondary d-lg-none" type="button"
+            onclick="document.body.classList.toggle('sidebar-open')">☰</button>
+    <span class="text-secondary">Không gian quản trị</span>
+    <div class="topbar-user">
+        <img th:src="${currentUser != null and currentUser.avatar != null ? currentUser.avatar : '/images/avatar.png'}"
+             alt="Avatar" onerror="this.onerror=null;this.src='/images/avatar.png'">
+        <span th:text="${currentUser != null ? currentUser.fullName : 'Tài khoản'}">Tài khoản</span>
+    </div>
+</header>
+</body>
+</html>
