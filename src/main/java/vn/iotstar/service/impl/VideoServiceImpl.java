@@ -54,7 +54,7 @@ public class VideoServiceImpl implements IVideoService {
     @Override
     @Transactional(readOnly = true)
     public List<Video> featuredActive() {
-        return videoRepository.findTop8ByActiveTrueOrderByViewsDescTitleAsc();
+        return videoRepository.findTop10ByActiveTrueOrderByUploadedAtDescTitleAsc();
     }
 
     @Override
@@ -96,7 +96,12 @@ public class VideoServiceImpl implements IVideoService {
 
         Video updated = new Video();
         updated.setVideoId(updatedVideoId);
+        updated.setUser(current.getUser());
+        updated.setVideoUrl(current.getVideoUrl());
+        updated.setUploadedAt(current.getUploadedAt());
         apply(updated, form);
+        current.setCategory(null);
+        current.setUser(null);
         videoRepository.delete(current);
         videoRepository.flush();
         return videoRepository.save(updated);

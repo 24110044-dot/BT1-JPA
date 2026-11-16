@@ -7,6 +7,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.PrePersist;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "videos")
@@ -30,6 +32,16 @@ public class Video {
 
     @Column(name = "Views")
     private Integer views;
+
+    @Column(name = "VideoUrl", length = 500)
+    private String videoUrl;
+
+    @Column(name = "UploadedAt", nullable = false)
+    private LocalDateTime uploadedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "UserId")
+    private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "CategoryId")
@@ -95,6 +107,38 @@ public class Video {
 
     public void setViews(Integer views) {
         this.views = views;
+    }
+
+    public String getVideoUrl() { return videoUrl; }
+    public void setVideoUrl(String videoUrl) { this.videoUrl = videoUrl; }
+    public LocalDateTime getUploadedAt() { return uploadedAt; }
+    public void setUploadedAt(LocalDateTime uploadedAt) { this.uploadedAt = uploadedAt; }
+    public User getUser() { return user; }
+    public void setUser(User user) {
+        if (this.user == user) {
+            return;
+        }
+        User previousUser = this.user;
+        this.user = user;
+        if (previousUser != null && previousUser.getVideos().contains(this)) {
+            previousUser.getVideos().remove(this);
+        }
+        if (user != null && !user.getVideos().contains(this)) {
+            user.getVideos().add(this);
+        }
+    }
+
+    @PrePersist
+    void onCreate() {
+        if (uploadedAt == null) {
+            uploadedAt = LocalDateTime.now();
+        }
+        if (views == null) {
+            views = 0;
+        }
+        if (active == null) {
+            active = true;
+        }
     }
 
     public Category getCategory() {

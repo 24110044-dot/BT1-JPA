@@ -25,12 +25,12 @@
         </div>
     </section>
     <section class="mt-5">
-        <div class="section-heading"><div><p class="eyebrow mb-1">VIDEO</p><h2>Video đang hiển thị</h2></div><a th:href="@{/videos}">Xem tất cả →</a></div>
+        <div class="section-heading"><div><p class="eyebrow mb-1">VIDEO MỚI</p><h2>10 video mới nhất</h2></div><div><a th:if="${currentUser != null and !isAdmin and !isManager}" th:href="@{/video}">Video của tôi →</a> <a th:href="@{/videos}">Video công khai →</a></div></div>
         <div class="row g-3">
             <div class="col-6 col-lg-3" th:each="video : ${featuredVideos}">
                 <article class="product-card h-100">
-                    <a th:href="@{/videos/detail(id=${video.videoId})}"><div class="product-image-wrap"><img class="product-image" th:src="${video.poster != null ? video.poster : '/images/avatar.png'}" onerror="this.onerror=null;this.src='/images/avatar.png'" alt="Poster video"></div></a>
-                    <div class="p-3"><a class="product-category" th:if="${video.category != null}" th:href="@{/videos(categoryId=${video.category.cateId})}" th:text="${video.category.cateName}"></a><span class="product-category" th:unless="${video.category != null}">Chưa phân loại</span><a class="product-name" th:href="@{/videos/detail(id=${video.videoId})}" th:text="${video.title}"></a><small class="text-secondary" th:text="|${video.views != null ? video.views : 0} lượt xem|"></small></div>
+                    <a th:href="@{/video/{id}(id=${video.videoId})}"><div class="product-image-wrap"><img class="product-image" th:src="${video.poster != null ? video.poster : '/images/avatar.png'}" onerror="this.onerror=null;this.src='/images/avatar.png'" alt="Poster video"></div></a>
+                    <div class="p-3"><a class="product-category" th:if="${video.category != null}" th:href="@{/videos(categoryId=${video.category.cateId})}" th:text="${video.category.cateName}"></a><span class="product-category" th:unless="${video.category != null}">Video</span><a class="product-name" th:href="@{/video/{id}(id=${video.videoId})}" th:text="${video.title}"></a><small class="text-secondary d-block" th:if="${video.uploadedAt != null}" th:text="${#temporals.format(video.uploadedAt, 'dd/MM/yyyy HH:mm')}"></small><small class="text-secondary" th:if="${video.user != null}" th:text="|Đăng bởi ${video.user.fullName}|"></small></div>
                 </article>
             </div>
             <div class="col-12" th:if="${#lists.isEmpty(featuredVideos)}"><div class="empty-state">Chưa có video đang hiển thị.</div></div>

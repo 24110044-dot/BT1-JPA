@@ -2,7 +2,6 @@ package vn.iotstar.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -15,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import java.util.List;
 
 import vn.iotstar.dto.VideoForm;
 import vn.iotstar.entity.Video;
@@ -43,6 +43,16 @@ class VideoServiceImplTest {
 
         assertSame(expected, actual);
         verify(videoRepository).searchAdmin(eq("lesson"), eq(3), eq(true), any(PageRequest.class));
+    }
+
+    @Test
+    void homeLoadsAtMostTenNewestActiveVideos() {
+        List<Video> expected = List.of(new Video());
+        when(videoRepository.findTop10ByActiveTrueOrderByUploadedAtDescTitleAsc()).thenReturn(expected);
+
+        assertSame(expected, videoService.featuredActive());
+
+        verify(videoRepository).findTop10ByActiveTrueOrderByUploadedAtDescTitleAsc();
     }
 
     @Test

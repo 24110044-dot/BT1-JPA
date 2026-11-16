@@ -5,6 +5,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +21,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import vn.iotstar.entity.User;
+import vn.iotstar.entity.Video;
 import org.springframework.data.domain.PageImpl;
 import java.util.List;
 
@@ -29,6 +32,7 @@ import vn.iotstar.controller.CategoryController;
 import vn.iotstar.controller.DashboardController;
 import vn.iotstar.controller.AuthController;
 import vn.iotstar.controller.UserController;
+import vn.iotstar.controller.UserVideoController;
 import vn.iotstar.security.CustomUserDetailsService;
 import vn.iotstar.security.RoleAuthenticationSuccessHandler;
 import vn.iotstar.service.ICategoryService;
@@ -36,8 +40,11 @@ import vn.iotstar.service.ICartService;
 import vn.iotstar.service.IProductService;
 import vn.iotstar.service.IUserService;
 import vn.iotstar.service.IVideoService;
+import vn.iotstar.service.AccountAuthService;
+import vn.iotstar.service.UserVideoService;
 
-@WebMvcTest({ DashboardController.class, AuthController.class, CategoryController.class, UserController.class })
+@WebMvcTest({ DashboardController.class, AuthController.class, CategoryController.class, UserController.class,
+        UserVideoController.class })
 @ImportAutoConfiguration({
         org.springframework.boot.security.autoconfigure.SecurityAutoConfiguration.class,
         org.springframework.boot.security.autoconfigure.web.servlet.ServletWebSecurityAutoConfiguration.class,
@@ -56,6 +63,12 @@ class SecurityAuthorizationTest {
 
     @MockitoBean
     private IUserService userService;
+
+    @MockitoBean
+    private AccountAuthService accountAuthService;
+
+    @MockitoBean
+    private UserVideoService userVideoService;
 
     @MockitoBean
     private ICartService cartService;
@@ -161,5 +174,70 @@ class SecurityAuthorizationTest {
     void loginAndRegistrationPagesRenderForAnonymousVisitors() throws Exception {
         mockMvc.perform(get("/login")).andExpect(status().isOk());
         mockMvc.perform(get("/register")).andExpect(status().isOk());
+        mockMvc.perform(get("/activate").param("email", "student@example.com"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Chữ số thứ sáu")));
+        mockMvc.perform(get("/forgot-password")).andExpect(status().isOk());
+        mockMvc.perform(get("/forgot-password/verify").param("email", "student@example.com"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Chữ số thứ nhất")));
+        mockMvc.perform(get("/video")).andExpect(status().is3xxRedirection());
+        mockMvc.perform(get("/video/add")).andExpect(status().is3xxRedirection());
+    }
+
+    @Test
+    void inactiveAccountIsRedirectedToActivationMessage() throws Exception {
+        User user = new User();
+        user.setUserName("pending");
+        user.setPassWord(passwordEncoder.encode("StrongPass123"));
+        user.setRoleid(5);
+        user.setActive(false);
+        org.mockito.Mockito.when(customUserDetailsService.loadUserByUsername("pending"))
+                .thenReturn(new CustomUserDetails(user));
+
+        mockMvc.perform(post("/login")
+                .with(SecurityMockMvcRequestPostProcessors.csrf())
+                .param("username", "pending")
+                .param("password", "StrongPass123"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/login?error=inactive"));
+    }
+
+    @Test
+    void ownerVideoPagesRenderAndDetailsArePublic() throws Exception {
+        User user = new User();
+        user.setId(12);
+        user.setUserName("video-owner");
+        user.setFullName("Video Owner");
+        user.setRoleid(5);
+        user.setPassWord("hash");
+        CustomUserDetails principal = new CustomUserDetails(user);
+        org.mockito.Mockito.when(userVideoService.listForUser(12, 0))
+                .thenReturn(org.springframework.data.domain.Page.empty());
+
+        mockMvc.perform(get("/video").with(SecurityMockMvcRequestPostProcessors.user(principal)))
+                .andExpect(status().isOk())
+                .andExpect(view().name("video/list"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Video của tôi")));
+
+        mockMvc.perform(get("/video/add").with(SecurityMockMvcRequestPostProcessors.user(principal)))
+                .andExpect(status().isOk())
+                .andExpect(view().name("video/form"));
+
+        User uploadedBy = new User();
+        uploadedBy.setId(12);
+        uploadedBy.setFullName("Video Owner");
+        Video video = new Video();
+        video.setVideoId("public-video");
+        video.setTitle("Public video");
+        video.setVideoUrl("/uploads/videos/test.mp4");
+        video.setUser(uploadedBy);
+        org.mockito.Mockito.when(userVideoService.getPublished("public-video")).thenReturn(video);
+        org.mockito.Mockito.when(categoryService.findAll()).thenReturn(List.of());
+
+        mockMvc.perform(get("/video/public-video"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("shop/video-detail"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Public video")));
     }
 }

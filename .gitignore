@@ -1,4 +1,7 @@
 target/
+.env
+uploads/videos/*
+!/uploads/videos/.gitkeep
 /uploads/categories/*
 !/uploads/categories/.gitkeep
 .mvn/wrapper/maven-wrapper.jar

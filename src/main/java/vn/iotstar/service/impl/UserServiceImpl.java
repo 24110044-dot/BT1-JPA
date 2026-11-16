@@ -14,7 +14,10 @@ import vn.iotstar.entity.User;
 import vn.iotstar.exception.DuplicateUserFieldException;
 import vn.iotstar.exception.UserNotFoundException;
 import vn.iotstar.repository.UserRepository;
+import vn.iotstar.repository.VideoRepository;
+import vn.iotstar.repository.AccountOtpRepository;
 import vn.iotstar.service.IUserService;
+import vn.iotstar.service.AccountAuthService;
 
 @Service
 @Transactional
@@ -22,24 +25,23 @@ public class UserServiceImpl implements IUserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AccountAuthService accountAuthService;
+    private final VideoRepository videoRepository;
+    private final AccountOtpRepository accountOtpRepository;
 
-    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder,
+            AccountAuthService accountAuthService, VideoRepository videoRepository,
+            AccountOtpRepository accountOtpRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.accountAuthService = accountAuthService;
+        this.videoRepository = videoRepository;
+        this.accountOtpRepository = accountOtpRepository;
     }
 
     @Override
     public User register(RegisterForm form) {
-        validateUnique(form.getUserName(), form.getEmail(), form.getPhone(), null);
-        if (!form.getPassword().equals(form.getConfirmPassword())) {
-            throw new IllegalArgumentException("Mật khẩu xác nhận không khớp.");
-        }
-        User user = new User();
-        applyCommon(user, form.getUserName(), form.getEmail(), form.getFullName(), form.getPhone(), null);
-        user.setRoleid(5);
-        user.setAvatar("/images/avatar.png");
-        user.setPassWord(passwordEncoder.encode(form.getPassword()));
-        return userRepository.save(user);
+        return accountAuthService.register(form);
     }
 
     @Override
@@ -52,6 +54,9 @@ public class UserServiceImpl implements IUserService {
         User user = new User();
         applyCommon(user, form.getUserName(), form.getEmail(), form.getFullName(), form.getPhone(), form.getAvatar());
         user.setRoleid(form.getRoleid());
+        if (user.getActive() == null) {
+            user.setActive(true);
+        }
         user.setPassWord(passwordEncoder.encode(form.getPassword()));
         return userRepository.save(user);
     }
@@ -88,6 +93,9 @@ public class UserServiceImpl implements IUserService {
         if (Integer.valueOf(1).equals(user.getRoleid()) && userRepository.countByRoleid(1) <= 1) {
             throw new IllegalArgumentException("Không thể xóa Admin cuối cùng.");
         }
+        videoRepository.findByUser_Id(id).forEach(video -> video.setUser(null));
+        videoRepository.flush();
+        accountOtpRepository.deleteByUser_Id(id);
         userRepository.delete(user);
     }
 

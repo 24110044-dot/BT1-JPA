@@ -42,6 +42,9 @@ public class User {
     @Column(name = "roleid", nullable = false)
     private Integer roleid;
 
+    @Column(name = "isActive", nullable = false)
+    private Boolean active = true;
+
     @Column(name = "phone", nullable = false, unique = true, length = 20)
     private String phone;
 
@@ -53,6 +56,9 @@ public class User {
 
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     private List<CustomerOrder> orders = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    private List<Video> videos = new ArrayList<>();
 
     @PrePersist
     void setCreatedDateIfMissing() {
@@ -75,6 +81,8 @@ public class User {
     public void setAvatar(String avatar) { this.avatar = avatar; }
     public Integer getRoleid() { return roleid; }
     public void setRoleid(Integer roleid) { this.roleid = roleid; }
+    public Boolean getActive() { return active; }
+    public void setActive(Boolean active) { this.active = active; }
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
     public LocalDateTime getCreatedDate() { return createdDate; }
@@ -83,4 +91,6 @@ public class User {
     public void setCart(Cart cart) { this.cart = cart; }
     public List<CustomerOrder> getOrders() { return orders; }
     public void setOrders(List<CustomerOrder> orders) { this.orders = orders == null ? new ArrayList<>() : orders; }
+    public List<Video> getVideos() { return videos; }
+    public void setVideos(List<Video> videos) { this.videos = videos == null ? new ArrayList<>() : videos; }
 }

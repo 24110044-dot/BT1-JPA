@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.beans.factory.annotation.Value;
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,10 +19,17 @@ public class GlobalExceptionHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    @Value("${APP_MAX_VIDEO_FILE_SIZE:200MB}")
+    private String maximumVideoFileSize;
+
     @ExceptionHandler(MaxUploadSizeExceededException.class)
-    public ResponseEntity<String> handleMaxUploadSize(MaxUploadSizeExceededException exception) {
+    public ResponseEntity<String> handleMaxUploadSize(MaxUploadSizeExceededException exception,
+            HttpServletRequest request) {
+        String message = request.getRequestURI().startsWith("/video")
+                ? "Video vượt quá dung lượng tối đa (" + maximumVideoFileSize + ")."
+                : "Dung lượng tệp tải lên không được vượt quá 5 MB.";
         return ResponseEntity.status(HttpStatusCode.valueOf(413))
-                .body("Dung lượng tệp tải lên không được vượt quá 5 MB.");
+                .body(message);
     }
 
     @ExceptionHandler(IOException.class)

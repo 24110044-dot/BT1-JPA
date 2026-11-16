@@ -1,6 +1,7 @@
 package vn.iotstar.security;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import org.junit.jupiter.api.Test;
 
@@ -14,6 +15,14 @@ class CustomUserDetailsTest {
         assertEquals("ROLE_MANAGER", detailsWithRole(2).getAuthorities().iterator().next().getAuthority());
         assertEquals("ROLE_USER", detailsWithRole(5).getAuthorities().iterator().next().getAuthority());
         assertEquals("ROLE_USER", detailsWithRole(99).getAuthorities().iterator().next().getAuthority());
+    }
+
+    @Test
+    void inactiveUserIsDisabledForAuthentication() {
+        User user = new User();
+        user.setActive(false);
+
+        assertFalse(new CustomUserDetails(user).isEnabled());
     }
 
     private CustomUserDetails detailsWithRole(int roleId) {

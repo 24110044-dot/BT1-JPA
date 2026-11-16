@@ -38,7 +38,11 @@ public class SecurityConfig {
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/uploads/**", "/error/**",
                         "/login", "/register", "/home", "/shop", "/products", "/products/**",
-                        "/videos", "/videos/**").permitAll()
+                        "/videos", "/videos/**", "/activate", "/activate/**", "/forgot-password",
+                        "/forgot-password/**", "/reset-password").permitAll()
+                .requestMatchers("/video/add", "/video/edit").authenticated()
+                .requestMatchers(HttpMethod.GET, "/video/{id}").permitAll()
+                .requestMatchers("/video", "/video/**").authenticated()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/manager/**").hasAnyRole("ADMIN", "MANAGER")
                 .requestMatchers("/cart/**", "/checkout/**", "/member/orders/**").hasRole("USER")

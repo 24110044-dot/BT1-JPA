@@ -6,8 +6,12 @@
         <p class="eyebrow mb-1">VIDEO</p>
         <a class="product-category" th:if="${video.category != null}" th:href="@{/videos(categoryId=${video.category.cateId})}" th:text="${video.category.cateName}"></a>
         <h1 class="page-title mt-2" th:text="${video.title}"></h1>
-        <div class="ratio ratio-16x9 my-4"><iframe th:src="|https://www.youtube-nocookie.com/embed/${video.videoId}|" title="Video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>
+        <div class="ratio ratio-16x9 my-4" th:if="${video.videoUrl != null}"><video controls preload="metadata" th:src="${video.videoUrl}" th:poster="${video.poster}"></video></div>
+        <div class="ratio ratio-16x9 my-4" th:if="${video.videoUrl == null}"><iframe th:src="|https://www.youtube-nocookie.com/embed/${video.videoId}|" title="Video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>
         <p class="text-secondary" th:text="${video.description}"></p>
+        <small class="text-secondary d-block" th:if="${video.user != null}" th:text="|Đăng bởi ${video.user.fullName}|"></small>
+        <small class="text-secondary d-block" th:if="${video.uploadedAt != null}" th:text="${#temporals.format(video.uploadedAt, 'dd/MM/yyyy HH:mm')}"></small>
         <small class="text-secondary" th:text="|${video.views != null ? video.views : 0} lượt xem|"></small>
+        <a class="btn btn-outline-primary mt-3" th:if="${currentUser != null and video.user != null and (isAdmin or currentUser.id == video.user.id)}" th:href="@{/video/edit(id=${video.videoId})}">Sửa video</a>
     </section>
 </main><div th:replace="~{fragments/shop-footer :: footer}"></div></body></html>

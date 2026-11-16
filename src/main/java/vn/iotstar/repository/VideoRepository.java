@@ -22,11 +22,21 @@ public interface VideoRepository extends JpaRepository<Video, String> {
     @EntityGraph(attributePaths = "category")
     Page<Video> findByActiveTrueAndCategory_CateId(Integer categoryId, Pageable pageable);
 
-    @EntityGraph(attributePaths = "category")
-    List<Video> findTop8ByActiveTrueOrderByViewsDescTitleAsc();
+    @EntityGraph(attributePaths = { "category", "user" })
+    List<Video> findTop10ByActiveTrueOrderByUploadedAtDescTitleAsc();
 
-    @EntityGraph(attributePaths = "category")
+    @EntityGraph(attributePaths = { "category", "user" })
     Optional<Video> findByVideoIdAndActiveTrue(String videoId);
+
+    @EntityGraph(attributePaths = { "category", "user" })
+    Page<Video> findByUser_IdOrderByUploadedAtDesc(Integer userId, Pageable pageable);
+
+    @EntityGraph(attributePaths = "user")
+    List<Video> findByUser_Id(Integer userId);
+
+    boolean existsByVideoUrl(String videoUrl);
+
+    boolean existsByVideoUrlAndVideoIdNot(String videoUrl, String videoId);
 
     @Override
     @EntityGraph(attributePaths = "category")

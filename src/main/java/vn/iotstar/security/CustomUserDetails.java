@@ -19,6 +19,7 @@ public class CustomUserDetails implements UserDetails {
     private final Integer roleId;
     private final String email;
     private final String phone;
+    private final boolean enabled;
 
     public CustomUserDetails(User user) {
         this.id = user.getId();
@@ -29,6 +30,7 @@ public class CustomUserDetails implements UserDetails {
         this.roleId = user.getRoleid();
         this.email = user.getEmail();
         this.phone = user.getPhone();
+        this.enabled = !Boolean.FALSE.equals(user.getActive());
     }
 
     @Override
@@ -50,4 +52,9 @@ public class CustomUserDetails implements UserDetails {
     public Integer getRoleId() { return roleId; }
     public String getEmail() { return email; }
     public String getPhone() { return phone; }
+
+    @Override
+    public boolean isEnabled() {
+        return enabled;
+    }
 }

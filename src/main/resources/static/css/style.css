@@ -229,6 +229,94 @@ body {
     margin-bottom: .25rem;
 }
 
+.otp-card {
+    max-width: 480px;
+}
+
+.otp-icon {
+    align-items: center;
+    background: #eef2ff;
+    border-radius: 50%;
+    color: #5877ed;
+    display: flex;
+    font-size: 1.65rem;
+    height: 58px;
+    justify-content: center;
+    margin: 1.5rem auto 1rem;
+    width: 58px;
+}
+
+.otp-card > .eyebrow,
+.otp-card > .page-title,
+.otp-card > p {
+    text-align: center;
+}
+
+.otp-fieldset {
+    border: 0;
+    margin-left: 0;
+    margin-right: 0;
+    min-width: 0;
+    padding: 0;
+}
+
+.otp-fieldset legend {
+    float: none;
+    margin-bottom: .65rem;
+    width: auto;
+}
+
+.otp-inputs {
+    display: grid;
+    gap: clamp(.35rem, 2vw, .65rem);
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.otp-digit {
+    background: #fbfcff;
+    border: 1px solid #dfe5ef;
+    border-radius: .7rem;
+    color: #17243b;
+    font-size: clamp(1.25rem, 5vw, 1.65rem);
+    font-weight: 700;
+    height: 3.6rem;
+    min-width: 0;
+    text-align: center;
+    transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
+    width: 100%;
+}
+
+.otp-digit:focus {
+    background: #fff;
+    border-color: #5877ed;
+    box-shadow: 0 0 0 .22rem rgb(88 119 237 / 16%);
+    outline: 0;
+}
+
+.otp-resend {
+    align-items: baseline;
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem;
+    justify-content: center;
+}
+
+.otp-resend .btn-link {
+    font-weight: 650;
+    text-decoration: none;
+}
+
+.otp-resend .btn-link:disabled {
+    color: #64748b;
+    cursor: not-allowed;
+}
+
+.otp-countdown {
+    flex-basis: 100%;
+    font-size: .82rem;
+    text-align: center;
+}
+
 .hero-panel {
     margin: 3rem auto;
     max-width: 900px;
