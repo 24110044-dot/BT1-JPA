@@ -83,12 +83,13 @@ class VideoControllerTest {
         Video video = new Video();
         video.setVideoId("youtube_id");
         video.setTitle("Video");
-        when(videoService.findActiveById("youtube_id")).thenReturn(java.util.Optional.of(video));
+        when(videoService.recordViewAndFindActiveById("youtube_id")).thenReturn(java.util.Optional.of(video));
         when(categoryService.findAll()).thenReturn(List.of());
 
         mockMvc.perform(get("/videos/detail").param("id", "youtube_id"))
                 .andExpect(status().isOk())
-                .andExpect(view().name("shop/video-detail"));
+                .andExpect(view().name("shop/video-detail"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("0 lượt xem")));
     }
 
     @Test

@@ -10,6 +10,8 @@
                 <a class="nav-link" th:href="@{/shop}">Trang chủ</a>
                 <a class="nav-link" th:href="@{/products}">Sản phẩm</a>
                 <a class="nav-link" th:href="@{/videos}">Video</a>
+                <a class="nav-link" th:if="${currentUser != null and !isAdmin and !isManager}"
+                   th:href="@{/video}">Video của tôi</a>
                 <div class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Danh mục</a>
                     <ul class="dropdown-menu">

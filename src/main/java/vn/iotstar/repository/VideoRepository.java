@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -28,6 +29,10 @@ public interface VideoRepository extends JpaRepository<Video, String> {
     @EntityGraph(attributePaths = { "category", "user" })
     Optional<Video> findByVideoIdAndActiveTrue(String videoId);
 
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("update Video v set v.views = coalesce(v.views, 0) + 1 where v.videoId = :videoId and v.active = true")
+    int incrementViewsForActiveVideo(@Param("videoId") String videoId);
+
     @EntityGraph(attributePaths = { "category", "user" })
     Page<Video> findByUser_IdOrderByUploadedAtDesc(Integer userId, Pageable pageable);
 
@@ -35,6 +40,8 @@ public interface VideoRepository extends JpaRepository<Video, String> {
     List<Video> findByUser_Id(Integer userId);
 
     boolean existsByVideoUrl(String videoUrl);
+
+    boolean existsByPoster(String poster);
 
     boolean existsByVideoUrlAndVideoIdNot(String videoUrl, String videoId);
 

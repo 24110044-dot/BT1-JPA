@@ -22,6 +22,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import vn.iotstar.entity.User;
 import vn.iotstar.entity.Video;
+import vn.iotstar.entity.Category;
 import org.springframework.data.domain.PageImpl;
 import java.util.List;
 
@@ -42,6 +43,7 @@ import vn.iotstar.service.IUserService;
 import vn.iotstar.service.IVideoService;
 import vn.iotstar.service.AccountAuthService;
 import vn.iotstar.service.UserVideoService;
+import vn.iotstar.service.VideoCategorySuggestionService;
 
 @WebMvcTest({ DashboardController.class, AuthController.class, CategoryController.class, UserController.class,
         UserVideoController.class })
@@ -69,6 +71,9 @@ class SecurityAuthorizationTest {
 
     @MockitoBean
     private UserVideoService userVideoService;
+
+    @MockitoBean
+    private VideoCategorySuggestionService videoCategorySuggestionService;
 
     @MockitoBean
     private ICartService cartService;
@@ -212,17 +217,65 @@ class SecurityAuthorizationTest {
         user.setRoleid(5);
         user.setPassWord("hash");
         CustomUserDetails principal = new CustomUserDetails(user);
+        Video listedVideo = new Video();
+        listedVideo.setVideoId("listed-video");
+        listedVideo.setTitle("Listed video");
+        listedVideo.setViews(12345);
         org.mockito.Mockito.when(userVideoService.listForUser(12, 0))
-                .thenReturn(org.springframework.data.domain.Page.empty());
+                .thenReturn(new PageImpl<>(List.of(listedVideo)));
 
         mockMvc.perform(get("/video").with(SecurityMockMvcRequestPostProcessors.user(principal)))
                 .andExpect(status().isOk())
                 .andExpect(view().name("video/list"))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("Video của tôi")));
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("href=\"/video\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Video của tôi")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("upload-video-cta")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Chia sẻ video mới")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("12345 lượt xem")));
 
         mockMvc.perform(get("/video/add").with(SecurityMockMvcRequestPostProcessors.user(principal)))
                 .andExpect(status().isOk())
-                .andExpect(view().name("video/form"));
+                .andExpect(view().name("video/form"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("name=\"thumbnailFile\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Gợi ý danh mục")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("id=\"categoryId\"")));
+
+        Category suggestedCategory = new Category(3, "Điện thoại", null);
+        org.mockito.Mockito.when(videoCategorySuggestionService.suggest("Samsung S24", "Đánh giá sản phẩm"))
+                .thenReturn(java.util.Optional.of(suggestedCategory));
+        mockMvc.perform(get("/video/suggest-category")
+                        .param("title", "Samsung S24")
+                        .param("description", "Đánh giá sản phẩm")
+                        .with(SecurityMockMvcRequestPostProcessors.user(principal)))
+                .andExpect(status().isOk())
+                .andExpect(content().json("""
+                        {"categoryId":3,"categoryName":"Điện thoại","message":"Gợi ý từ tiêu đề/mô tả và sản phẩm. Hãy xác nhận hoặc đổi danh mục trước khi tải lên."}
+                        """));
+
+        Video ownedVideo = new Video();
+        ownedVideo.setVideoId("owned-video");
+        ownedVideo.setTitle("Owned video");
+        ownedVideo.setVideoUrl("/uploads/videos/owned.mp4");
+        ownedVideo.setPoster("/uploads/video-thumbnails/owned.png");
+        ownedVideo.setUser(user);
+        org.mockito.Mockito.when(userVideoService.getForOwner("owned-video", 12, 5)).thenReturn(ownedVideo);
+        mockMvc.perform(get("/video/edit")
+                        .param("id", "owned-video")
+                        .with(SecurityMockMvcRequestPostProcessors.user(principal)))
+                .andExpect(status().isOk())
+                .andExpect(view().name("video/form"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("/uploads/videos/owned.mp4")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("/uploads/video-thumbnails/owned.png")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Gỡ thumbnail")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Đây là video đang lưu")));
+
+        mockMvc.perform(post("/video/thumbnail/delete")
+                        .with(SecurityMockMvcRequestPostProcessors.csrf())
+                        .with(SecurityMockMvcRequestPostProcessors.user(principal))
+                        .param("id", "owned-video"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/video/edit?id=owned-video"));
+        org.mockito.Mockito.verify(userVideoService).removeThumbnail("owned-video", 12, 5);
 
         User uploadedBy = new User();
         uploadedBy.setId(12);
@@ -232,12 +285,14 @@ class SecurityAuthorizationTest {
         video.setTitle("Public video");
         video.setVideoUrl("/uploads/videos/test.mp4");
         video.setUser(uploadedBy);
-        org.mockito.Mockito.when(userVideoService.getPublished("public-video")).thenReturn(video);
+        video.setViews(9876);
+        org.mockito.Mockito.when(userVideoService.recordViewAndGetPublished("public-video")).thenReturn(video);
         org.mockito.Mockito.when(categoryService.findAll()).thenReturn(List.of());
 
         mockMvc.perform(get("/video/public-video"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("shop/video-detail"))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("Public video")));
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Public video")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("9876 lượt xem")));
     }
 }

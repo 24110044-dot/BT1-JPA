@@ -64,6 +64,14 @@ public class VideoServiceImpl implements IVideoService {
     }
 
     @Override
+    public Optional<Video> recordViewAndFindActiveById(String videoId) {
+        if (videoRepository.incrementViewsForActiveVideo(videoId) == 0) {
+            return Optional.empty();
+        }
+        return videoRepository.findByVideoIdAndActiveTrue(videoId);
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public Video getById(String videoId) {
         return videoRepository.findById(videoId)

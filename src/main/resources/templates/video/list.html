@@ -4,14 +4,21 @@
 <body class="shop-page">
 <div th:replace="~{fragments/shop-header :: header}"></div>
 <main class="container shop-content py-4">
-    <div class="section-heading"><div><p class="eyebrow mb-1">THƯ VIỆN CỦA BẠN</p><h1>Video của tôi</h1></div><a class="btn btn-primary" th:href="@{/video/add}">Tải video lên</a></div>
+    <div class="section-heading video-library-heading">
+        <div><p class="eyebrow mb-1">THƯ VIỆN CỦA BẠN</p><h1>Video của tôi</h1><p class="text-secondary mb-0">Quản lý video bạn đã chia sẻ</p></div>
+        <a class="btn btn-primary upload-video-cta" th:href="@{/video/add}">
+            <span class="upload-video-cta-icon" aria-hidden="true">+</span>
+            <span class="upload-video-cta-copy"><strong>Tải video lên</strong><small>Chia sẻ video mới</small></span>
+            <span class="upload-video-cta-arrow" aria-hidden="true">→</span>
+        </a>
+    </div>
     <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
     <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
     <div class="row g-3">
         <div class="col-6 col-lg-4" th:each="video : ${videos.content}">
             <article class="product-card h-100">
                 <a th:href="@{/video/{id}(id=${video.videoId})}"><div class="product-image-wrap"><img class="product-image" th:src="${video.poster != null ? video.poster : '/images/avatar.png'}" onerror="this.onerror=null;this.src='/images/avatar.png'" alt="Thumbnail video"></div></a>
-                <div class="p-3"><a class="product-name" th:href="@{/video/{id}(id=${video.videoId})}" th:text="${video.title}"></a><small class="text-secondary d-block" th:if="${video.uploadedAt != null}" th:text="${#temporals.format(video.uploadedAt, 'dd/MM/yyyy HH:mm')}"></small>
+                <div class="p-3"><a class="product-name" th:href="@{/video/{id}(id=${video.videoId})}" th:text="${video.title}"></a><small class="video-views d-inline-flex mt-2" th:text="|▶ ${video.views != null ? video.views : 0} lượt xem|"></small><small class="text-secondary d-block mt-1" th:if="${video.uploadedAt != null}" th:text="${#temporals.format(video.uploadedAt, 'dd/MM/yyyy HH:mm')}"></small>
                     <div class="d-flex gap-2 mt-3"><a class="btn btn-outline-primary btn-sm" th:href="@{/video/edit(id=${video.videoId})}">Sửa</a><form method="post" th:action="@{/video/delete}"><input type="hidden" name="id" th:value="${video.videoId}"><button class="btn btn-outline-danger btn-sm" type="submit" onclick="return confirm('Xóa video này?')">Xóa</button></form></div>
                 </div>
             </article>

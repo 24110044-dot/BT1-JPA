@@ -79,6 +79,7 @@ class CategoryServiceImplTest {
     void categoryAndVideoKeepBothSidesOfRelationshipInSync() {
         Category firstCategory = new Category(1, "Đầu tiên", null);
         Category secondCategory = new Category(2, "Thứ hai", null);
+        firstCategory.setVideos(java.util.List.of());
         Video video = new Video();
 
         video.setCategory(firstCategory);

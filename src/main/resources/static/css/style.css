@@ -383,10 +383,20 @@ body.shop-page {
     text-decoration: none;
 }
 
+.shop-page a:focus-visible,
+.shop-page button:focus-visible,
+.shop-page input:focus-visible,
+.shop-page select:focus-visible,
+.shop-page textarea:focus-visible {
+    outline: 3px solid rgb(49 88 216 / 45%);
+    outline-offset: 3px;
+}
+
 .shop-page .btn {
     border-radius: .7rem;
     font-weight: 650;
     padding: .65rem 1rem;
+    transition: box-shadow .15s ease, border-color .15s ease, background-color .15s ease, color .15s ease;
 }
 
 .shop-page .btn-primary {
@@ -394,9 +404,81 @@ body.shop-page {
     border-color: var(--shop-primary);
 }
 
-.shop-page .btn-primary:hover {
+.shop-page .btn:not(:disabled):hover,
+.shop-page .btn:not(:disabled):focus-visible {
+    box-shadow: 0 0 0 3px rgb(49 88 216 / 28%), 0 8px 20px rgb(49 88 216 / 18%);
+}
+
+.shop-page .btn-primary:not(:disabled):hover,
+.shop-page .btn-primary:not(:disabled):focus-visible {
     background: #2448bd;
     border-color: #2448bd;
+    color: #fff;
+}
+
+.shop-page .shop-hero .btn-primary:not(:disabled):hover,
+.shop-page .shop-hero .btn-primary:not(:disabled):focus-visible {
+    background: #fff;
+    border-color: #fff;
+    color: #2448bd;
+}
+
+.shop-page .upload-video-cta {
+    align-items: center;
+    background: linear-gradient(135deg, #3158d8, #2448bd);
+    border: 1px solid #2448bd;
+    border-radius: .9rem;
+    box-shadow: 0 8px 18px rgb(49 88 216 / 20%);
+    color: #fff;
+    display: inline-flex;
+    gap: .75rem;
+    min-height: 64px;
+    padding: .6rem .9rem;
+    text-align: left;
+}
+
+.shop-page .btn.upload-video-cta:not(:disabled):hover,
+.shop-page .btn.upload-video-cta:not(:disabled):focus-visible {
+    background: linear-gradient(135deg, #2448bd, #193aab);
+    border-color: #a9bcff;
+    box-shadow: 0 0 0 4px rgb(88 119 237 / 28%), 0 12px 24px rgb(36 72 189 / 28%);
+    color: #fff;
+}
+
+.upload-video-cta-icon {
+    align-items: center;
+    background: rgb(255 255 255 / 16%);
+    border: 1px solid rgb(255 255 255 / 40%);
+    border-radius: .7rem;
+    display: inline-flex;
+    flex: 0 0 40px;
+    font-size: 1.65rem;
+    font-weight: 400;
+    height: 40px;
+    justify-content: center;
+    line-height: 1;
+}
+
+.upload-video-cta-copy {
+    display: grid;
+    gap: .1rem;
+}
+
+.upload-video-cta-copy strong {
+    font-size: .94rem;
+    line-height: 1.25;
+}
+
+.upload-video-cta-copy small {
+    color: #e0e8ff;
+    font-size: .72rem;
+    font-weight: 500;
+    line-height: 1.2;
+}
+
+.upload-video-cta-arrow {
+    font-size: 1.1rem;
+    margin-left: .25rem;
 }
 
 .shop-header {
@@ -625,14 +707,14 @@ body.shop-page {
     font-weight: 650;
     gap: .55rem;
     padding: .55rem 1rem .55rem .6rem;
-    transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+    transition: border-color .15s ease, box-shadow .15s ease, color .15s ease;
 }
 
-.category-pills > a:hover {
+.category-pills > a:hover,
+.category-pills > a:focus-visible {
     border-color: #b9c9ff;
     box-shadow: 0 8px 20px rgb(49 88 216 / 9%);
     color: var(--shop-primary);
-    transform: translateY(-2px);
 }
 
 .category-pill-icon {
@@ -676,12 +758,13 @@ body.shop-page {
     box-shadow: 0 5px 18px rgb(29 44 79 / 3%);
     height: 100%;
     overflow: hidden;
-    transition: box-shadow .18s ease, transform .18s ease;
+    transition: border-color .18s ease, box-shadow .18s ease;
 }
 
-.product-card:hover {
+.product-card:hover,
+.product-card:focus-within {
+    border-color: #cbd6f5;
     box-shadow: 0 16px 34px rgb(29 44 79 / 10%);
-    transform: translateY(-4px);
 }
 
 .product-image-wrap {
@@ -701,8 +784,23 @@ body.shop-page {
     width: 100%;
 }
 
-.product-card:hover .product-image {
+.product-card:hover .product-image,
+.product-card:focus-within .product-image {
     transform: scale(1.045);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .category-pills > a,
+    .product-card,
+    .product-image,
+    .shop-page .btn {
+        transition: none;
+    }
+
+    .product-card:hover .product-image,
+    .product-card:focus-within .product-image {
+        transform: none;
+    }
 }
 
 .product-category {
@@ -739,6 +837,23 @@ body.shop-page {
     margin-top: .45rem;
 }
 
+.video-views {
+    align-items: center;
+    background: #eef2ff;
+    border-radius: 999px;
+    color: #344fba;
+    font-size: .78rem;
+    font-weight: 700;
+    line-height: 1.4;
+    padding: .3rem .6rem;
+    white-space: nowrap;
+}
+
+.video-views-detail {
+    font-size: .9rem;
+    width: fit-content;
+}
+
 .detail-price {
     font-size: 1.75rem;
 }
@@ -760,6 +875,61 @@ body.shop-page {
     object-fit: contain;
     padding: 1.25rem;
     width: 100%;
+}
+
+.detail-image-wrap {
+    min-width: 0;
+}
+
+.product-detail-info {
+    min-width: 0;
+}
+
+.product-detail-description {
+    line-height: 1.75;
+    white-space: pre-line;
+}
+
+.product-stock {
+    color: #64748b;
+}
+
+.product-detail-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .75rem;
+    margin-top: 1.5rem;
+}
+
+.product-detail-actions .btn {
+    min-width: 170px;
+}
+
+.quantity-dialog {
+    border: 0;
+    border-radius: 1.1rem;
+    box-shadow: 0 24px 80px rgb(15 23 42 / 25%);
+    max-width: min(440px, calc(100vw - 2rem));
+    padding: 2rem;
+    width: 100%;
+}
+
+.quantity-dialog::backdrop {
+    background: rgb(15 23 42 / 55%);
+    backdrop-filter: blur(3px);
+}
+
+.quantity-dialog-close {
+    display: flex;
+    justify-content: flex-end;
+    margin: -.5rem -.5rem .75rem;
+}
+
+.quantity-dialog-actions {
+    display: flex;
+    gap: .75rem;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
 }
 
 .quantity-input {
@@ -980,6 +1150,11 @@ body.shop-page {
 
     .section-heading {
         align-items: start;
+    }
+
+    .video-library-heading .upload-video-cta {
+        justify-content: center;
+        width: 100%;
     }
 
     .shop-footer .container {

@@ -11,6 +11,8 @@ public interface IOrderService {
 
     CustomerOrder checkout(Integer userId, CheckoutForm form);
 
+    CustomerOrder checkoutProduct(Integer userId, Integer productId, int quantity, CheckoutForm form);
+
     Page<CustomerOrder> userOrders(Integer userId, int page);
 
     Optional<CustomerOrder> findOwnOrder(Integer orderId, Integer userId);

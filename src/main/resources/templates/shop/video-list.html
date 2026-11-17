@@ -10,7 +10,7 @@
     <div class="row g-3">
         <div class="col-6 col-lg-3" th:each="video : ${videos.content}"><article class="product-card h-100">
             <a th:href="@{/videos/detail(id=${video.videoId})}"><div class="product-image-wrap"><img class="product-image" th:src="${video.poster != null ? video.poster : '/images/avatar.png'}" onerror="this.onerror=null;this.src='/images/avatar.png'" alt="Poster video"></div></a>
-            <div class="p-3"><a class="product-category" th:if="${video.category != null}" th:href="@{/videos(categoryId=${video.category.cateId})}" th:text="${video.category.cateName}"></a><span class="product-category" th:unless="${video.category != null}">Chưa phân loại</span><a class="product-name" th:href="@{/videos/detail(id=${video.videoId})}" th:text="${video.title}"></a><small class="text-secondary" th:text="|${video.views != null ? video.views : 0} lượt xem|"></small></div>
+            <div class="p-3"><a class="product-category" th:if="${video.category != null}" th:href="@{/videos(categoryId=${video.category.cateId})}" th:text="${video.category.cateName}"></a><span class="product-category" th:unless="${video.category != null}">Chưa phân loại</span><a class="product-name" th:href="@{/videos/detail(id=${video.videoId})}" th:text="${video.title}"></a><small class="video-views d-inline-flex mt-2" th:text="|▶ ${video.views != null ? video.views : 0} lượt xem|"></small></div>
         </article></div>
         <div class="col-12" th:if="${videos.empty}"><div class="empty-state">Chưa có video đang hiển thị trong danh mục này.</div></div>
     </div>

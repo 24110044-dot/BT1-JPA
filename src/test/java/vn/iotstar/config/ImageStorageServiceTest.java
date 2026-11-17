@@ -55,6 +55,22 @@ class ImageStorageServiceTest {
         assertThrows(InvalidImageException.class, () -> service.store(oversizedImage));
     }
 
+    @Test
+    void storesAndDeletesVideoThumbnailInItsDedicatedFolder() throws Exception {
+        ImageStorageService service = new ImageStorageService(temporaryDirectory.toString());
+        MockMultipartFile image = new MockMultipartFile(
+                "thumbnailFile", "poster.png", "image/png", createPng());
+
+        String imageUrl = service.store(image, "video-thumbnails");
+        Path storedFile = temporaryDirectory.getParent().resolve("video-thumbnails")
+                .resolve(imageUrl.substring(imageUrl.lastIndexOf('/') + 1));
+
+        assertTrue(imageUrl.startsWith("/uploads/video-thumbnails/"));
+        assertTrue(Files.exists(storedFile));
+        service.deleteManagedImage(imageUrl);
+        assertFalse(Files.exists(storedFile));
+    }
+
     private byte[] createPng() throws Exception {
         BufferedImage image = new BufferedImage(2, 2, BufferedImage.TYPE_INT_ARGB);
         ByteArrayOutputStream output = new ByteArrayOutputStream();

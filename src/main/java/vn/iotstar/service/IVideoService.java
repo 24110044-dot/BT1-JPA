@@ -18,6 +18,8 @@ public interface IVideoService {
 
     Optional<Video> findActiveById(String videoId);
 
+    Optional<Video> recordViewAndFindActiveById(String videoId);
+
     Video getById(String videoId);
 
     Video create(VideoForm form);

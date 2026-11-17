@@ -62,3 +62,123 @@ BEGIN
         CREATE INDEX IX_videos_User_UploadedAt ON dbo.videos(UserId, UploadedAt DESC);
 END;
 GO
+
+IF OBJECT_ID(N'dbo.videos', N'U') IS NOT NULL
+   AND OBJECT_ID(N'dbo.Category', N'U') IS NOT NULL
+   AND COL_LENGTH(N'dbo.videos', N'CategoryId') IS NOT NULL
+BEGIN
+    SET XACT_ABORT ON;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        IF OBJECT_ID(N'dbo.categories', N'U') IS NOT NULL
+           AND COL_LENGTH(N'dbo.categories', N'CategoryName') IS NOT NULL
+        BEGIN
+            IF COL_LENGTH(N'dbo.categories', N'Images') IS NOT NULL
+                EXEC(N'
+                    INSERT INTO dbo.Category (cate_name, icons)
+                    SELECT LEFT(LTRIM(RTRIM(old.CategoryName)), 255),
+                           LEFT(old.Images, 255)
+                    FROM dbo.categories AS old
+                    WHERE NULLIF(LTRIM(RTRIM(old.CategoryName)), N'''') IS NOT NULL
+                      AND NOT EXISTS (
+                          SELECT 1
+                          FROM dbo.Category AS currentCategory
+                          WHERE currentCategory.cate_name = LEFT(LTRIM(RTRIM(old.CategoryName)), 255)
+                      );
+                ');
+            ELSE
+                EXEC(N'
+                    INSERT INTO dbo.Category (cate_name, icons)
+                    SELECT LEFT(LTRIM(RTRIM(old.CategoryName)), 255), NULL
+                    FROM dbo.categories AS old
+                    WHERE NULLIF(LTRIM(RTRIM(old.CategoryName)), N'''') IS NOT NULL
+                      AND NOT EXISTS (
+                          SELECT 1
+                          FROM dbo.Category AS currentCategory
+                          WHERE currentCategory.cate_name = LEFT(LTRIM(RTRIM(old.CategoryName)), 255)
+                      );
+                ');
+        END;
+
+        DECLARE @wrongForeignKey sysname;
+        DECLARE @dropForeignKeySql nvarchar(max);
+        SELECT TOP (1) @wrongForeignKey = foreignKey.name
+        FROM sys.foreign_keys AS foreignKey
+        INNER JOIN sys.foreign_key_columns AS foreignKeyColumn
+            ON foreignKeyColumn.constraint_object_id = foreignKey.object_id
+        WHERE foreignKey.parent_object_id = OBJECT_ID(N'dbo.videos')
+          AND COL_NAME(foreignKeyColumn.parent_object_id, foreignKeyColumn.parent_column_id) = N'CategoryId'
+          AND (
+              foreignKey.referenced_object_id <> OBJECT_ID(N'dbo.Category')
+              OR COL_NAME(foreignKeyColumn.referenced_object_id, foreignKeyColumn.referenced_column_id) <> N'cate_id'
+          );
+
+        WHILE @wrongForeignKey IS NOT NULL
+        BEGIN
+            SET @dropForeignKeySql = N'ALTER TABLE dbo.videos DROP CONSTRAINT ' + QUOTENAME(@wrongForeignKey);
+            EXEC sys.sp_executesql @dropForeignKeySql;
+            SET @wrongForeignKey = NULL;
+
+            SELECT TOP (1) @wrongForeignKey = foreignKey.name
+            FROM sys.foreign_keys AS foreignKey
+            INNER JOIN sys.foreign_key_columns AS foreignKeyColumn
+                ON foreignKeyColumn.constraint_object_id = foreignKey.object_id
+            WHERE foreignKey.parent_object_id = OBJECT_ID(N'dbo.videos')
+              AND COL_NAME(foreignKeyColumn.parent_object_id, foreignKeyColumn.parent_column_id) = N'CategoryId'
+              AND (
+                  foreignKey.referenced_object_id <> OBJECT_ID(N'dbo.Category')
+                  OR COL_NAME(foreignKeyColumn.referenced_object_id, foreignKeyColumn.referenced_column_id) <> N'cate_id'
+              );
+        END;
+
+        IF OBJECT_ID(N'dbo.categories', N'U') IS NOT NULL
+           AND COL_LENGTH(N'dbo.categories', N'CategoryName') IS NOT NULL
+        BEGIN
+            EXEC(N'
+                UPDATE video
+                SET CategoryId = currentCategory.cate_id
+                FROM dbo.videos AS video
+                INNER JOIN dbo.categories AS oldCategory
+                    ON oldCategory.CategoryId = video.CategoryId
+                INNER JOIN dbo.Category AS currentCategory
+                    ON currentCategory.cate_name = LEFT(LTRIM(RTRIM(oldCategory.CategoryName)), 255)
+                WHERE video.CategoryId IS NOT NULL;
+            ');
+        END;
+
+        IF EXISTS (
+            SELECT 1
+            FROM dbo.videos AS video
+            LEFT JOIN dbo.Category AS category
+                ON category.cate_id = video.CategoryId
+            WHERE video.CategoryId IS NOT NULL
+              AND category.cate_id IS NULL
+        )
+        BEGIN
+            ;THROW 51001, 'Some videos have a CategoryId with no matching dbo.Category.cate_id. Map those categories before applying this migration.', 1;
+        END;
+
+        IF NOT EXISTS (
+            SELECT 1
+            FROM sys.foreign_keys AS foreignKey
+            INNER JOIN sys.foreign_key_columns AS foreignKeyColumn
+                ON foreignKeyColumn.constraint_object_id = foreignKey.object_id
+            WHERE foreignKey.parent_object_id = OBJECT_ID(N'dbo.videos')
+              AND foreignKey.referenced_object_id = OBJECT_ID(N'dbo.Category')
+              AND COL_NAME(foreignKeyColumn.parent_object_id, foreignKeyColumn.parent_column_id) = N'CategoryId'
+              AND COL_NAME(foreignKeyColumn.referenced_object_id, foreignKeyColumn.referenced_column_id) = N'cate_id'
+        )
+            ALTER TABLE dbo.videos ADD CONSTRAINT FK_videos_Category
+                FOREIGN KEY (CategoryId) REFERENCES dbo.Category(cate_id);
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH;
+END;
+GO

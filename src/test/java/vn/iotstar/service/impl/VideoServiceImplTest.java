@@ -1,6 +1,7 @@
 package vn.iotstar.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -53,6 +54,29 @@ class VideoServiceImplTest {
         assertSame(expected, videoService.featuredActive());
 
         verify(videoRepository).findTop10ByActiveTrueOrderByUploadedAtDescTitleAsc();
+    }
+
+    @Test
+    void openingPublicVideoIncrementsViewsAndReturnsFreshVideo() {
+        Video video = new Video();
+        video.setVideoId("video-1");
+        video.setViews(24);
+        when(videoRepository.incrementViewsForActiveVideo("video-1")).thenReturn(1);
+        when(videoRepository.findByVideoIdAndActiveTrue("video-1"))
+                .thenReturn(java.util.Optional.of(video));
+
+        java.util.Optional<Video> result = videoService.recordViewAndFindActiveById("video-1");
+
+        assertTrue(result.isPresent());
+        assertEquals(24, result.get().getViews());
+        verify(videoRepository).incrementViewsForActiveVideo("video-1");
+    }
+
+    @Test
+    void hiddenPublicVideoIsNotReturnedOrCounted() {
+        when(videoRepository.incrementViewsForActiveVideo("hidden-video")).thenReturn(0);
+
+        assertTrue(videoService.recordViewAndFindActiveById("hidden-video").isEmpty());
     }
 
     @Test

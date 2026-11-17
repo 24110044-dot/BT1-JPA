@@ -72,7 +72,7 @@ public class VideoController {
 
     @GetMapping("/videos/detail")
     public String detail(@RequestParam String id, Model model) {
-        Video video = videoService.findActiveById(id)
+        Video video = videoService.recordViewAndFindActiveById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         model.addAttribute("video", video);
         model.addAttribute("categories", categoryService.findAll());

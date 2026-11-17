@@ -44,10 +44,8 @@ public class CartController {
 
     @PostMapping("/cart/buy/{productId}")
     public String buyNow(@PathVariable Integer productId,
-            @RequestParam(defaultValue = "1") @Min(1) int quantity,
-            Authentication authentication) {
-        cartService.add(userId(authentication), productId, quantity);
-        return "redirect:/checkout";
+            @RequestParam(defaultValue = "1") @Min(1) int quantity) {
+        return "redirect:/checkout/buy/" + productId + "?quantity=" + quantity;
     }
 
     @PostMapping("/cart/update/{cartItemId}")

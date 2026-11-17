@@ -34,7 +34,8 @@ public class ImageStorageService {
     }
 
     public String store(MultipartFile file, String folder) throws IOException {
-        if (!"categories".equals(folder) && !"products".equals(folder) && !"users".equals(folder)) {
+        if (!"categories".equals(folder) && !"products".equals(folder) && !"users".equals(folder)
+                && !"video-thumbnails".equals(folder)) {
             throw new InvalidImageException("Thư mục lưu ảnh không hợp lệ.");
         }
         if (file == null || file.isEmpty()) {
@@ -53,7 +54,12 @@ public class ImageStorageService {
         if (!destination.getParent().equals(destinationDirectory)) {
             throw new InvalidImageException("Tên tệp hình ảnh không hợp lệ.");
         }
-        file.transferTo(destination);
+        try {
+            file.transferTo(destination);
+        } catch (IOException exception) {
+            Files.deleteIfExists(destination);
+            throw exception;
+        }
         return "/uploads/" + folder + "/" + filename;
     }
 
@@ -63,7 +69,8 @@ public class ImageStorageService {
         }
         String relative = imageUrl.substring("/uploads/".length());
         String[] parts = relative.split("/", -1);
-        if (parts.length != 2 || !java.util.Set.of("categories", "products", "users").contains(parts[0])
+        if (parts.length != 2
+                || !java.util.Set.of("categories", "products", "users", "video-thumbnails").contains(parts[0])
                 || parts[1].isBlank() || parts[1].contains("\\") || parts[1].contains("..")) {
             return;
         }

@@ -21,7 +21,7 @@
         <div class="section-heading"><div><p class="eyebrow mb-1">NỘI DUNG LIÊN QUAN</p><h2>Video danh mục này</h2></div><a th:href="@{/videos(categoryId=${selectedCategoryId})}">Xem tất cả video →</a></div>
         <div class="row g-3">
             <div class="col-6 col-lg-3" th:each="video : ${relatedVideos}">
-                <article class="product-card h-100"><a th:href="@{/videos/detail(id=${video.videoId})}"><div class="product-image-wrap"><img class="product-image" th:src="${video.poster != null ? video.poster : '/images/avatar.png'}" onerror="this.onerror=null;this.src='/images/avatar.png'" alt="Poster video"></div></a><div class="p-3"><a class="product-name" th:href="@{/videos/detail(id=${video.videoId})}" th:text="${video.title}"></a><small class="text-secondary d-block" th:text="|${video.views != null ? video.views : 0} lượt xem|"></small></div></article>
+                <article class="product-card h-100"><a th:href="@{/videos/detail(id=${video.videoId})}"><div class="product-image-wrap"><img class="product-image" th:src="${video.poster != null ? video.poster : '/images/avatar.png'}" onerror="this.onerror=null;this.src='/images/avatar.png'" alt="Poster video"></div></a><div class="p-3"><a class="product-name" th:href="@{/videos/detail(id=${video.videoId})}" th:text="${video.title}"></a><small class="video-views d-inline-flex mt-2" th:text="|▶ ${video.views != null ? video.views : 0} lượt xem|"></small></div></article>
             </div>
             <div class="col-12" th:if="${#lists.isEmpty(relatedVideos)}"><div class="empty-state">Danh mục này chưa có video đang hiển thị.</div></div>
         </div>

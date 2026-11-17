@@ -5,7 +5,10 @@
     <div class="section-heading mb-4"><div><p class="eyebrow mb-1">SECURE CHECKOUT</p><h1>Xác nhận đơn hàng</h1></div></div>
     <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
     <div class="row g-4"><div class="col-lg-7"><section class="panel"><h2 class="h5 mb-3">Thông tin giao hàng</h2>
-        <form method="post" th:action="@{/checkout}" th:object="${form}">
+        <form method="post"
+              th:action="${buyNow} ? @{/checkout/buy/{productId}/place(productId=${buyNowProductId})} : @{/checkout}"
+              th:object="${form}">
+            <input th:if="${buyNow}" type="hidden" name="quantity" th:value="${buyNowQuantity}">
             <div class="mb-3"><label class="form-label">Tên người nhận</label><input class="form-control" th:field="*{recipientName}"><div class="field-error" th:errors="*{recipientName}"></div></div>
             <div class="mb-3"><label class="form-label">Số điện thoại</label><input class="form-control" th:field="*{phone}"><div class="field-error" th:errors="*{phone}"></div></div>
             <div class="mb-3"><label class="form-label">Địa chỉ nhận hàng</label><textarea class="form-control" rows="3" th:field="*{shippingAddress}"></textarea><div class="field-error" th:errors="*{shippingAddress}"></div></div>

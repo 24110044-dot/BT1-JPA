@@ -11,7 +11,7 @@
         <p class="text-secondary" th:text="${video.description}"></p>
         <small class="text-secondary d-block" th:if="${video.user != null}" th:text="|Đăng bởi ${video.user.fullName}|"></small>
         <small class="text-secondary d-block" th:if="${video.uploadedAt != null}" th:text="${#temporals.format(video.uploadedAt, 'dd/MM/yyyy HH:mm')}"></small>
-        <small class="text-secondary" th:text="|${video.views != null ? video.views : 0} lượt xem|"></small>
+        <div class="video-views video-views-detail mt-3" th:text="|▶ ${video.views != null ? video.views : 0} lượt xem|"></div>
         <a class="btn btn-outline-primary mt-3" th:if="${currentUser != null and video.user != null and (isAdmin or currentUser.id == video.user.id)}" th:href="@{/video/edit(id=${video.videoId})}">Sửa video</a>
     </section>
 </main><div th:replace="~{fragments/shop-footer :: footer}"></div></body></html>

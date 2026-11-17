@@ -15,9 +15,9 @@
 
 1. Chạy `database/create_database.sql` trong SSMS bằng Windows Authentication. Script tạo `CategoryJPA_DB`, `Category`, `Users` và bảng `videos` cần entity Video cũ.
 2. Chạy tiếp toàn bộ `database/ecommerce_schema.sql` trong SSMS (mở file, chọn **Execute**). Đây là bước bắt buộc cho phiên bản bán hàng: script tạo bảng Products/Carts/CartItems/Orders/OrderItems, khóa ngoại, chỉ mục và dữ liệu mẫu Category/Product; có thể chạy lại an toàn mà không nhân bản các mẫu đã thêm.
-3. Chạy `database/migration_account_otp_video_upload.sql`. Script giữ nguyên video cũ, thêm trạng thái kích hoạt, bảng OTP, đường dẫn file/thời điểm upload và khóa ngoại chủ sở hữu.
+3. Chạy `database/migration_account_otp_video_upload.sql`. Script thêm trạng thái kích hoạt, bảng OTP, đường dẫn file/thời điểm upload và khóa ngoại chủ sở hữu; nếu có schema danh mục cũ, script sao chép và ánh xạ dữ liệu sang `dbo.Category` rồi sửa khóa ngoại video.
 4. Cấp tài khoản Windows đang chạy ứng dụng quyền đọc/ghi database. Kết nối ứng dụng dùng `MSI\MSSQLSERVER01`, không có SQL username/password.
-5. Nếu database đã có bảng `dbo.categories` của phiên bản trước, dữ liệu cũ được giữ nguyên. Có thể chạy `database/migrate_legacy_categories.sql` để chép Category cũ sang `dbo.Category`; kiểm tra kết quả trước khi dùng ứng dụng.
+5. Ứng dụng chỉ sử dụng `dbo.Category(cate_id)`. Nếu xác nhận dữ liệu đã chuyển sang `dbo.Category` và không còn cần bảng cũ, hãy sao lưu database rồi chạy `database/drop_legacy_categories.sql` để xóa `dbo.categories`. Script kiểm tra khóa ngoại video, các ID danh mục video và các bảng phụ thuộc trước khi xóa; nếu chưa an toàn, script sẽ dừng và báo lỗi. Không chạy script tạo schema legacy.
 6. Chạy `database/sample_data.sql` nếu cần tài khoản mẫu, sau khi tạo BCrypt hash. Script mẫu chứa placeholder và cố ý dừng nếu chưa được thay thế.
 
 `spring.jpa.hibernate.ddl-auto=validate`: Hibernate chỉ kiểm tra mapping, không tạo hoặc sửa database.
@@ -45,8 +45,8 @@ Trong VS Code, mở `src/main/java/vn/iotstar/util/PasswordHashGenerator.java`, 
 - Sao chép `.env.example` để tham khảo các biến cần cấu hình. Spring Boot không tự đọc file `.env`; đặt các biến môi trường trong VS Code `launch.json`/terminal hoặc cấu hình môi trường của hệ điều hành. Không commit file `.env`.
 - Cấu hình `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD` (mật khẩu ứng dụng SMTP), `MAIL_FROM`, `MAIL_SMTP_AUTH` và `MAIL_SMTP_STARTTLS` bằng thông tin nhà cung cấp email của bạn. Không có thông tin SMTP mặc định trong source.
 - Đăng ký tài khoản sẽ gửi OTP kích hoạt 6 số (5 phút, tối đa 5 lần thử, gửi lại sau 60 giây). Quên mật khẩu cũng dùng OTP và chỉ cấp quyền đặt mật khẩu trong session sau khi xác minh.
-- Chạy `database/migration_account_otp_video_upload.sql` trước khi khởi động để tránh lỗi Hibernate `ddl-auto=validate`.
-- Tải video tại `/video`; danh sách của tài khoản được phân trang 6 video/trang. Hỗ trợ MP4, WebM, Ogg; thư mục mặc định `uploads/videos`, URL công khai `/uploads/videos/...`. Có thể cấu hình `VIDEO_UPLOAD_DIR`, `APP_MAX_VIDEO_FILE_SIZE`, `APP_MAX_REQUEST_SIZE` và `APP_MAX_VIDEO_FILE_SIZE_BYTES`.
+- Chạy `database/migration_account_otp_video_upload.sql` trước khi khởi động để tránh lỗi Hibernate `ddl-auto=validate`. Migration cũng chuyển khóa ngoại `videos.CategoryId` sang `Category.cate_id`; với database cũ, video được ánh xạ danh mục cũ sang danh mục mới theo tên.
+- Tải video tại `/video`; danh sách của tài khoản được phân trang 6 video/trang. Khi tải lên, người dùng có thể yêu cầu gợi ý danh mục từ tiêu đề/mô tả đối chiếu tên sản phẩm và danh mục; cần xác nhận hoặc chọn lại danh mục trước khi lưu. Video không khớp rõ ràng sẽ yêu cầu chọn danh mục thủ công để xuất hiện đúng khi lọc. Hỗ trợ MP4, WebM, Ogg; thumbnail có thể nhập URL hoặc chọn ảnh PNG/JPG/GIF/BMP từ máy (tối đa 5 MB). Video lưu mặc định trong `uploads/videos`, thumbnail trong `uploads/video-thumbnails`; cả hai được phục vụ dưới `/uploads/...`. Có thể cấu hình `VIDEO_UPLOAD_DIR`, `APP_MAX_VIDEO_FILE_SIZE`, `APP_MAX_REQUEST_SIZE` và `APP_MAX_VIDEO_FILE_SIZE_BYTES`.
 - Video cũ dùng YouTube ID và các trang `/videos` vẫn được giữ. Trang `/home` hiển thị tối đa 10 video đang bật mới nhất theo `UploadedAt`.
 
 Nếu driver báo thiếu DLL Windows Authentication, cần Microsoft JDBC Auth DLL phiên bản 13.4.0, kiến trúc x64/x86 đúng với JVM, trong `PATH`. Không chuyển sang SQL Authentication.

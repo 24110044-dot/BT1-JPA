@@ -83,7 +83,6 @@ public class CategoryController {
         String storedIcon = null;
         try {
             category.setCateId(null);
-            category.setVideos(java.util.List.of());
             if (imageFile != null && !imageFile.isEmpty()) {
                 category.setIcon(imageStorageService.store(imageFile));
                 storedIcon = category.getIcon();

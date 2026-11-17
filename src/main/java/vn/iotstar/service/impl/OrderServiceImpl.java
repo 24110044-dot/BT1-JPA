@@ -63,7 +63,7 @@ public class OrderServiceImpl implements IOrderService {
             lockedProducts.put(product.getProductId(), product);
         }
 
-        BigDecimal total = BigDecimal.ZERO;
+        List<CheckoutLine> lines = new java.util.ArrayList<>();
         for (CartItem cartItem : cart.getItems()) {
             Product product = lockedProducts.get(cartItem.getProduct().getProductId());
             if (product == null || !Boolean.TRUE.equals(product.getStatus())) {
@@ -73,7 +73,40 @@ public class OrderServiceImpl implements IOrderService {
                 throw new InsufficientStockException("Sản phẩm \"" + product.getProductName()
                         + "\" không đủ tồn kho. Tồn hiện tại: " + product.getQuantity() + ".");
             }
-            total = total.add(product.getPrice().multiply(BigDecimal.valueOf(cartItem.getQuantity())));
+            lines.add(new CheckoutLine(product, cartItem.getQuantity()));
+        }
+
+        CustomerOrder saved = createOrder(userId, form, method, lines);
+        cart.getItems().clear();
+        cartRepository.save(cart);
+        return saved;
+    }
+
+    @Override
+    public CustomerOrder checkoutProduct(Integer userId, Integer productId, int quantity, CheckoutForm form) {
+        if (quantity < 1) {
+            throw new IllegalArgumentException("Số lượng phải lớn hơn 0.");
+        }
+
+        Product product = productRepository.findAllByIdInForUpdate(List.of(productId)).stream()
+                .findFirst()
+                .orElseThrow(() -> new ProductNotFoundException(productId));
+        if (!Boolean.TRUE.equals(product.getStatus())) {
+            throw new InsufficientStockException("Sản phẩm hiện không kinh doanh.");
+        }
+        if (quantity > product.getQuantity()) {
+            throw new InsufficientStockException("Sản phẩm \"" + product.getProductName()
+                    + "\" không đủ tồn kho. Tồn hiện tại: " + product.getQuantity() + ".");
+        }
+
+        return createOrder(userId, form, normalizeMethod(form.getPaymentMethod()),
+                List.of(new CheckoutLine(product, quantity)));
+    }
+
+    private CustomerOrder createOrder(Integer userId, CheckoutForm form, String method, List<CheckoutLine> lines) {
+        BigDecimal total = BigDecimal.ZERO;
+        for (CheckoutLine line : lines) {
+            total = total.add(line.product().getPrice().multiply(BigDecimal.valueOf(line.quantity())));
         }
 
         User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException(userId));
@@ -88,9 +121,9 @@ public class OrderServiceImpl implements IOrderService {
         order.setOrderStatus("PENDING");
         order.setTotalAmount(total);
 
-        for (CartItem cartItem : cart.getItems()) {
-            Product product = lockedProducts.get(cartItem.getProduct().getProductId());
-            int quantity = cartItem.getQuantity();
+        for (CheckoutLine line : lines) {
+            Product product = line.product();
+            int quantity = line.quantity();
             product.setQuantity(product.getQuantity() - quantity);
 
             OrderItem item = new OrderItem();
@@ -103,10 +136,7 @@ public class OrderServiceImpl implements IOrderService {
             order.addItem(item);
         }
 
-        CustomerOrder saved = orderRepository.saveAndFlush(order);
-        cart.getItems().clear();
-        cartRepository.save(cart);
-        return saved;
+        return orderRepository.saveAndFlush(order);
     }
 
     @Override
@@ -223,5 +253,8 @@ public class OrderServiceImpl implements IOrderService {
             throw new IllegalArgumentException("Số trang không hợp lệ.");
         }
         return page;
+    }
+
+    private record CheckoutLine(Product product, int quantity) {
     }
 }

@@ -51,6 +51,9 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
     @EntityGraph(attributePaths = "category")
     List<Product> findTop8ByStatusTrueOrderByCreatedDateDesc();
 
+    @EntityGraph(attributePaths = "category")
+    List<Product> findByStatusTrue();
+
     long countByCategory_CateId(Integer categoryId);
 
     long countByStatusTrue();

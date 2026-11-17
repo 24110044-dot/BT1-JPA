@@ -1,6 +1,7 @@
 package vn.iotstar.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import org.springframework.web.multipart.MultipartFile;
@@ -17,7 +18,12 @@ public class UserVideoForm {
     @Size(max = 500, message = "Đường dẫn thumbnail tối đa 500 ký tự.")
     private String poster;
 
+    @NotNull(message = "Vui lòng chọn danh mục video.")
+    private Integer categoryId;
+
     private MultipartFile file;
+
+    private MultipartFile thumbnailFile;
 
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
@@ -25,6 +31,10 @@ public class UserVideoForm {
     public void setDescription(String description) { this.description = description; }
     public String getPoster() { return poster; }
     public void setPoster(String poster) { this.poster = poster; }
+    public Integer getCategoryId() { return categoryId; }
+    public void setCategoryId(Integer categoryId) { this.categoryId = categoryId; }
     public MultipartFile getFile() { return file; }
     public void setFile(MultipartFile file) { this.file = file; }
+    public MultipartFile getThumbnailFile() { return thumbnailFile; }
+    public void setThumbnailFile(MultipartFile thumbnailFile) { this.thumbnailFile = thumbnailFile; }
 }

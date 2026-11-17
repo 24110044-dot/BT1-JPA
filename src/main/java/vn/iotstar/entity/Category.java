@@ -76,7 +76,7 @@ public class Category {
     }
 
     public void setVideos(List<Video> videos) {
-        this.videos = videos == null ? new ArrayList<>() : videos;
+        this.videos = videos == null ? new ArrayList<>() : new ArrayList<>(videos);
     }
 
     public List<Product> getProducts() {

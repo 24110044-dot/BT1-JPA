@@ -6,13 +6,117 @@
 <main class="container shop-content py-4"><div class="auth-card auth-card-wide">
     <p class="eyebrow mb-1">QUẢN LÝ VIDEO</p><h1 class="page-title mb-4" th:text="${isEdit ? 'Sửa video' : 'Tải video lên'}"></h1>
     <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
     <form method="post" enctype="multipart/form-data" th:action="${isEdit ? '/video/edit?id=' + videoId : '/video/add'}" th:object="${form}">
         <div class="mb-3"><label class="form-label" for="title">Tiêu đề</label><input class="form-control" id="title" th:field="*{title}" maxlength="255" required><div class="field-error" th:errors="*{title}"></div></div>
         <div class="mb-3"><label class="form-label" for="description">Mô tả</label><textarea class="form-control" id="description" th:field="*{description}" rows="5" maxlength="4000"></textarea><div class="field-error" th:errors="*{description}"></div></div>
-        <div class="mb-3"><label class="form-label" for="poster">Đường dẫn thumbnail (không bắt buộc)</label><input class="form-control" id="poster" th:field="*{poster}" maxlength="500" placeholder="https://example.com/thumbnail.jpg"><div class="field-error" th:errors="*{poster}"></div></div>
-        <div class="mb-3"><label class="form-label" for="file">Tệp video <span th:if="${isEdit}">(chọn tệp mới nếu muốn thay)</span></label><input class="form-control" id="file" name="file" type="file" accept=".mp4,.webm,.ogv,video/mp4,video/webm,video/ogg" th:required="${!isEdit}"><small class="text-secondary">Hỗ trợ MP4, WebM, Ogg; tối đa 200 MB.</small><div th:if="${isEdit}" class="text-secondary small mt-1">Bỏ trống để giữ nguyên tệp hiện tại.</div><div class="field-error" th:errors="*{file}"></div></div>
+        <div class="mb-3">
+            <label class="form-label" for="categoryId">Danh mục video</label>
+            <div class="input-group">
+                <select class="form-select" id="categoryId" th:field="*{categoryId}" required>
+                    <option value="">Chọn danh mục phù hợp...</option>
+                    <option th:each="category : ${categories}" th:value="${category.cateId}" th:text="${category.cateName}"></option>
+                </select>
+                <button th:if="${!isEdit}" class="btn btn-outline-primary" id="suggestCategory" type="button">Gợi ý danh mục</button>
+            </div>
+            <div class="form-text" th:if="${!isEdit}">Gợi ý dựa trên tiêu đề, mô tả và tên sản phẩm; hãy kiểm tra hoặc đổi trước khi tải lên.</div>
+            <div class="form-text" th:if="${isEdit}">Chọn danh mục đúng để video xuất hiện khi lọc theo danh mục.</div>
+            <div class="field-error" th:errors="*{categoryId}"></div>
+            <div th:if="${#lists.isEmpty(categories)}" class="alert alert-warning mt-2 mb-0">Chưa có danh mục để gán video. Vui lòng tạo danh mục trước.</div>
+            <div th:if="${!isEdit}" id="categorySuggestionMessage" class="form-text mt-2" role="status" aria-live="polite"></div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label" for="poster">Đường dẫn thumbnail (không bắt buộc)</label>
+            <input class="form-control" id="poster" th:field="*{poster}" maxlength="500" placeholder="https://example.com/thumbnail.jpg">
+            <div class="field-error" th:errors="*{poster}"></div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label" for="thumbnailFile">Hoặc chọn ảnh thumbnail từ máy</label>
+            <input class="form-control" id="thumbnailFile" name="thumbnailFile" type="file" accept="image/png,image/jpeg,image/gif,image/bmp">
+            <small class="text-secondary">PNG, JPG, GIF hoặc BMP; tối đa 5 MB. Nếu chọn ảnh, ảnh này sẽ thay thế URL ở trên.</small>
+            <div th:if="${isEdit and currentPoster != null}" class="mt-2">
+                <img th:src="${currentPoster}" alt="Thumbnail hiện tại" style="max-height: 160px; max-width: 100%; object-fit: contain">
+                <div class="text-secondary small mt-1">Thumbnail hiện tại: <a th:href="${currentPoster}" th:text="${currentPoster}" target="_blank" rel="noopener"></a></div>
+                <button class="btn btn-outline-danger btn-sm mt-2" type="submit"
+                        form="removeThumbnailForm"
+                        onclick="return confirm('Gỡ thumbnail này khỏi video?')">Gỡ thumbnail</button>
+            </div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label" for="file">Tệp video <span th:if="${isEdit}">(chọn tệp mới nếu muốn thay)</span></label>
+            <input class="form-control" id="file" name="file" type="file" accept=".mp4,.webm,.ogv,video/mp4,video/webm,video/ogg" th:required="${!isEdit}">
+            <small class="text-secondary">Hỗ trợ MP4, WebM, Ogg; tối đa 200 MB.</small>
+            <div th:if="${isEdit and currentVideoUrl != null}" class="mt-2">
+                <video controls preload="metadata" style="max-height: 220px; max-width: 100%" th:src="${currentVideoUrl}" th:poster="${currentPoster}"></video>
+                <div><a class="small" th:href="${currentVideoUrl}" th:text="${currentVideoUrl}" target="_blank" rel="noopener">Mở video hiện tại</a></div>
+                <div class="text-secondary small mt-1">Đây là video đang lưu. Để trống ô chọn file mới nếu muốn giữ video này; trình duyệt không tự điền file cũ vào ô chọn.</div>
+            </div>
+            <div th:if="${isEdit and currentVideoUrl == null}" class="text-secondary small mt-1">Để trống để giữ đường dẫn video hiện tại.</div>
+            <div class="field-error" th:errors="*{file}"></div>
+        </div>
         <div class="d-flex gap-2"><button class="btn btn-primary" type="submit" th:text="${isEdit ? 'Lưu thay đổi' : 'Tải lên'}"></button><a class="btn btn-outline-secondary" th:href="@{/video}">Hủy</a></div>
+    </form>
+    <form th:if="${isEdit and currentPoster != null}" id="removeThumbnailForm" method="post" th:action="@{/video/thumbnail/delete}">
+        <input type="hidden" name="id" th:value="${videoId}">
     </form>
 </div></main>
 <div th:replace="~{fragments/shop-footer :: footer}"></div>
+<script th:if="${!isEdit}">
+    (() => {
+        const button = document.getElementById("suggestCategory");
+        const title = document.getElementById("title");
+        const description = document.getElementById("description");
+        const category = document.getElementById("categoryId");
+        const message = document.getElementById("categorySuggestionMessage");
+        const defaultLabel = button.textContent;
+
+        button.addEventListener("click", async () => {
+            if (!title.value.trim() && !description.value.trim()) {
+                message.textContent = "Nhập tiêu đề hoặc mô tả trước để tìm danh mục.";
+                message.className = "form-text mt-2 text-danger";
+                return;
+            }
+
+            button.disabled = true;
+            button.textContent = "Đang tìm...";
+            message.textContent = "";
+            try {
+                const params = new URLSearchParams({
+                    title: title.value,
+                    description: description.value
+                });
+                const response = await fetch(`/video/suggest-category?${params}`, {
+                    headers: { "Accept": "application/json" }
+                });
+                if (!response.ok) {
+                    throw new Error(`Suggestion request failed: ${response.status}`);
+                }
+
+                const suggestion = await response.json();
+                if (suggestion.categoryId == null) {
+                    message.textContent = suggestion.message;
+                    message.className = "form-text mt-2 text-warning";
+                    return;
+                }
+
+                const optionExists = Array.from(category.options)
+                    .some(option => option.value === String(suggestion.categoryId));
+                if (!optionExists) {
+                    message.textContent = "Danh mục gợi ý không còn khả dụng. Vui lòng tự chọn danh mục.";
+                    message.className = "form-text mt-2 text-danger";
+                    return;
+                }
+                category.value = String(suggestion.categoryId);
+                message.textContent = `${suggestion.message} Đã chọn: ${suggestion.categoryName}.`;
+                message.className = "form-text mt-2 text-success";
+            } catch (error) {
+                message.textContent = "Không thể lấy gợi ý lúc này. Vui lòng tự chọn danh mục.";
+                message.className = "form-text mt-2 text-danger";
+            } finally {
+                button.disabled = false;
+                button.textContent = defaultLabel;
+            }
+        });
+    })();
+</script>
 </body></html>

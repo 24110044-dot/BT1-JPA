@@ -40,7 +40,7 @@ public class SecurityConfig {
                         "/login", "/register", "/home", "/shop", "/products", "/products/**",
                         "/videos", "/videos/**", "/activate", "/activate/**", "/forgot-password",
                         "/forgot-password/**", "/reset-password").permitAll()
-                .requestMatchers("/video/add", "/video/edit").authenticated()
+                .requestMatchers("/video/add", "/video/edit", "/video/suggest-category").authenticated()
                 .requestMatchers(HttpMethod.GET, "/video/{id}").permitAll()
                 .requestMatchers("/video", "/video/**").authenticated()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
