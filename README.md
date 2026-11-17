@@ -93,3 +93,7 @@ SELECT otpId, userId, purpose, createdAt, expiresAt, attempts, usedAt FROM dbo.A
 ## Test
 
 `mvnw.cmd clean test` chạy unit test dịch vụ, BCrypt/OTP, upload, role mapping và MockMvc authorization. Các test không phụ thuộc SQL Server/SMTP. Việc khởi động ứng dụng, gửi email thật, xác thực Windows Authentication và kiểm tra schema thật cần SMTP/SQL Server/JDBC Auth DLL đã cấu hình trên máy chạy ứng dụng.
+
+## chay test
+admin pass: 123456789
+phat pass: 123456789
