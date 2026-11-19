@@ -20,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import vn.iotstar.config.ImageStorageService;
+import vn.iotstar.dto.CategoryForm;
 import vn.iotstar.entity.Category;
 import vn.iotstar.exception.CategoryHasVideosException;
 import vn.iotstar.exception.CategoryNotFoundException;
@@ -69,12 +70,12 @@ public class CategoryController {
 
     @GetMapping("/admin/category/add")
     public String addForm(Model model) {
-        model.addAttribute("category", new Category());
+        model.addAttribute("category", new CategoryForm());
         return ADD_VIEW;
     }
 
     @PostMapping("/admin/category/add")
-    public String add(@Valid @ModelAttribute("category") Category category, BindingResult bindingResult,
+    public String add(@Valid @ModelAttribute("category") CategoryForm form, BindingResult bindingResult,
             @RequestParam(name = "imageFile", required = false) MultipartFile imageFile,
             RedirectAttributes redirectAttributes) throws IOException {
         if (bindingResult.hasErrors()) {
@@ -82,7 +83,9 @@ public class CategoryController {
         }
         String storedIcon = null;
         try {
+            Category category = new Category();
             category.setCateId(null);
+            category.setCateName(form.getCateName());
             if (imageFile != null && !imageFile.isEmpty()) {
                 category.setIcon(imageStorageService.store(imageFile));
                 storedIcon = category.getIcon();
@@ -104,28 +107,30 @@ public class CategoryController {
 
     @GetMapping("/admin/category/edit/{id}")
     public String editForm(@PathVariable Integer id, Model model) {
-        model.addAttribute("category", categoryService.findById(id)
-                .orElseThrow(() -> new CategoryNotFoundException(id)));
+        Category current = categoryService.findById(id).orElseThrow(() -> new CategoryNotFoundException(id));
+        CategoryForm form = new CategoryForm();
+        form.setCateId(id);
+        form.setCateName(current.getCateName());
+        model.addAttribute("category", form);
+        model.addAttribute("currentIcon", current.getIcon());
         return EDIT_VIEW;
     }
 
     @PostMapping("/admin/category/edit/{id}")
-    public String edit(@PathVariable Integer id, @Valid @ModelAttribute("category") Category category,
+    public String edit(@PathVariable Integer id, @Valid @ModelAttribute("category") CategoryForm form,
             BindingResult bindingResult, @RequestParam(name = "imageFile", required = false) MultipartFile imageFile,
             RedirectAttributes redirectAttributes, Model model) throws IOException {
         Category current = categoryService.findById(id).orElseThrow(() -> new CategoryNotFoundException(id));
         if (bindingResult.hasErrors()) {
-            category.setCateId(id);
-            if ((category.getIcon() == null || category.getIcon().isBlank())
-                    && (imageFile == null || imageFile.isEmpty())) {
-                category.setIcon(current.getIcon());
-            }
+            form.setCateId(id);
             model.addAttribute("currentIcon", current.getIcon());
             return EDIT_VIEW;
         }
         String newIcon = null;
         try {
+            Category category = new Category();
             category.setCateId(id);
+            category.setCateName(form.getCateName());
             if (imageFile != null && !imageFile.isEmpty()) {
                 category.setIcon(imageStorageService.store(imageFile));
                 newIcon = category.getIcon();

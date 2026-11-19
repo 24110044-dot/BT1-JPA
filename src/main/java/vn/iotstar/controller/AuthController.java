@@ -15,6 +15,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import vn.iotstar.dto.RegisterForm;
+import vn.iotstar.dto.ForgotPasswordForm;
+import vn.iotstar.dto.OtpForm;
+import vn.iotstar.dto.ResetPasswordForm;
 import vn.iotstar.exception.DuplicateUserFieldException;
 import vn.iotstar.exception.EmailDeliveryException;
 import vn.iotstar.exception.OtpVerificationException;
@@ -85,26 +88,32 @@ public class AuthController {
         if (isAuthenticated(authentication)) {
             return "redirect:/home";
         }
-        model.addAttribute("email", email == null ? "" : email);
+        OtpForm form = new OtpForm();
+        form.setEmail(email == null ? "" : email);
+        model.addAttribute("form", form);
         return "auth/activate";
     }
 
     @PostMapping("/activate")
-    public String activate(@RequestParam String email, @RequestParam String code, Model model,
+    public String activate(@Valid @ModelAttribute("form") OtpForm form, BindingResult bindingResult, Model model,
             RedirectAttributes redirectAttributes) {
+        if (bindingResult.hasErrors()) {
+            return "auth/activate";
+        }
         try {
-            accountAuthService.activate(email, code);
+            accountAuthService.activate(form.getEmail(), form.getCode());
             redirectAttributes.addFlashAttribute("successMessage", "Kích hoạt thành công. Bạn có thể đăng nhập.");
             return "redirect:/login";
         } catch (OtpVerificationException exception) {
-            model.addAttribute("email", email);
             model.addAttribute("errorMessage", exception.getMessage());
             return "auth/activate";
         }
     }
 
     @PostMapping("/activate/resend")
-    public String resendActivation(@RequestParam String email, Model model) {
+    public String resendActivation(@RequestParam(required = false) String email, Model model) {
+        OtpForm form = new OtpForm();
+        form.setEmail(email == null ? "" : email);
         try {
             accountAuthService.resendActivation(email);
             model.addAttribute("successMessage", "Mã kích hoạt mới đã được gửi.");
@@ -113,17 +122,26 @@ public class AuthController {
         } catch (EmailDeliveryException exception) {
             model.addAttribute("errorMessage", exception.getMessage());
         }
-        model.addAttribute("email", email);
+        model.addAttribute("form", form);
         return "auth/activate";
     }
 
     @GetMapping("/forgot-password")
-    public String forgotPasswordForm(Authentication authentication) {
-        return isAuthenticated(authentication) ? "redirect:/home" : "auth/forgot-password";
+    public String forgotPasswordForm(Authentication authentication, Model model) {
+        if (isAuthenticated(authentication)) {
+            return "redirect:/home";
+        }
+        model.addAttribute("form", new ForgotPasswordForm());
+        return "auth/forgot-password";
     }
 
     @PostMapping("/forgot-password")
-    public String requestPasswordReset(@RequestParam String email, RedirectAttributes redirectAttributes) {
+    public String requestPasswordReset(@Valid @ModelAttribute("form") ForgotPasswordForm form,
+            BindingResult bindingResult, Model model, RedirectAttributes redirectAttributes) {
+        if (bindingResult.hasErrors()) {
+            return "auth/forgot-password";
+        }
+        String email = form.getEmail();
         try {
             accountAuthService.requestPasswordReset(email);
             redirectAttributes.addFlashAttribute("successMessage",
@@ -144,40 +162,55 @@ public class AuthController {
 
     @GetMapping("/forgot-password/verify")
     public String passwordOtpForm(@RequestParam(required = false) String email, Model model) {
-        model.addAttribute("email", email == null ? "" : email);
+        OtpForm form = new OtpForm();
+        form.setEmail(email == null ? "" : email);
+        model.addAttribute("form", form);
         return "auth/password-otp";
     }
 
     @PostMapping("/forgot-password/verify")
-    public String verifyPasswordOtp(@RequestParam String email, @RequestParam String code, HttpSession session,
-            Model model) {
+    public String verifyPasswordOtp(@Valid @ModelAttribute("form") OtpForm form, BindingResult bindingResult,
+            HttpSession session, Model model) {
+        if (bindingResult.hasErrors()) {
+            return "auth/password-otp";
+        }
         try {
-            Integer userId = accountAuthService.verifyPasswordReset(email, code);
+            Integer userId = accountAuthService.verifyPasswordReset(form.getEmail(), form.getCode());
             session.setAttribute(RESET_USER_ID, userId);
             session.setAttribute(RESET_VERIFIED_AT, System.currentTimeMillis());
             return "redirect:/reset-password";
         } catch (OtpVerificationException exception) {
-            model.addAttribute("email", email);
             model.addAttribute("errorMessage", exception.getMessage());
             return "auth/password-otp";
         }
     }
 
     @GetMapping("/reset-password")
-    public String resetPasswordForm(HttpSession session) {
-        return hasValidResetGrant(session) ? "auth/reset-password" : "redirect:/forgot-password";
+    public String resetPasswordForm(HttpSession session, Model model) {
+        if (!hasValidResetGrant(session)) {
+            return "redirect:/forgot-password";
+        }
+        model.addAttribute("form", new ResetPasswordForm());
+        return "auth/reset-password";
     }
 
     @PostMapping("/reset-password")
-    public String resetPassword(@RequestParam String password, @RequestParam String confirmPassword,
-            HttpSession session, Model model, RedirectAttributes redirectAttributes) {
+    public String resetPassword(@Valid @ModelAttribute("form") ResetPasswordForm form,
+            BindingResult bindingResult, HttpSession session, Model model,
+            RedirectAttributes redirectAttributes) {
         if (!hasValidResetGrant(session)) {
             clearResetGrant(session);
             return "redirect:/forgot-password";
         }
+        if (!form.getPassword().equals(form.getConfirmPassword())) {
+            bindingResult.rejectValue("confirmPassword", "password.mismatch", "Mật khẩu xác nhận không khớp.");
+        }
+        if (bindingResult.hasErrors()) {
+            return "auth/reset-password";
+        }
         try {
             Integer userId = (Integer) session.getAttribute(RESET_USER_ID);
-            accountAuthService.resetPassword(userId, password, confirmPassword);
+            accountAuthService.resetPassword(userId, form.getPassword(), form.getConfirmPassword());
             clearResetGrant(session);
             redirectAttributes.addFlashAttribute("successMessage", "Mật khẩu đã được cập nhật. Hãy đăng nhập.");
             return "redirect:/login";

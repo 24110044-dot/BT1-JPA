@@ -124,7 +124,7 @@ class SecurityAuthorizationTest {
                 .param("username", "unknown")
                 .param("password", "wrong"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/login?error=invalid"));
+                .andExpect(redirectedUrl("/login?error=invalid&username=unknown"));
     }
 
     @Test
@@ -205,7 +205,7 @@ class SecurityAuthorizationTest {
                 .param("username", "pending")
                 .param("password", "StrongPass123"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/login?error=inactive"));
+                .andExpect(redirectedUrl("/login?error=inactive&username=pending"));
     }
 
     @Test

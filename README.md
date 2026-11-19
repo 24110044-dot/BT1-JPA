@@ -44,6 +44,28 @@ Trong VS Code, mở `src/main/java/vn/iotstar/util/PasswordHashGenerator.java`, 
 
 - Sao chép `.env.example` để tham khảo các biến cần cấu hình. Spring Boot không tự đọc file `.env`; đặt các biến môi trường trong VS Code `launch.json`/terminal hoặc cấu hình môi trường của hệ điều hành. Không commit file `.env`.
 - Cấu hình `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD` (mật khẩu ứng dụng SMTP), `MAIL_FROM`, `MAIL_SMTP_AUTH` và `MAIL_SMTP_STARTTLS` bằng thông tin nhà cung cấp email của bạn. Không có thông tin SMTP mặc định trong source.
+
+#### Chạy Gmail SMTP trong PowerShell
+
+Thay `your-gmail@gmail.com` bên dưới bằng địa chỉ Gmail của bạn (cả `MAIL_USERNAME` và `MAIL_FROM`). Gmail yêu cầu bật xác minh 2 bước và tạo **Google App Password**; không nhập mật khẩu đăng nhập Gmail thông thường. App Password được nhập kín tại dấu nhắc, khoảng trắng sẽ được loại bỏ. Các biến chỉ tồn tại trong cửa sổ PowerShell hiện tại:
+
+```powershell
+$env:MAIL_HOST = "smtp.gmail.com"
+$env:MAIL_PORT = "587"
+$env:MAIL_USERNAME = "your-gmail@gmail.com"
+$env:MAIL_FROM = $env:MAIL_USERNAME
+$env:MAIL_SMTP_AUTH = "true"
+$env:MAIL_SMTP_STARTTLS = "true"
+
+$secure = Read-Host "Nhập Google App Password" -AsSecureString
+$env:MAIL_PASSWORD = (New-Object System.Net.NetworkCredential("", $secure)).Password -replace '\s', ''
+
+Test-NetConnection smtp.gmail.com -Port 587
+.\mvnw.cmd spring-boot:run
+```
+
+Tiếp tục chỉ khi `Test-NetConnection` hiển thị `TcpTestSucceeded : True`.
+
 - Đăng ký tài khoản sẽ gửi OTP kích hoạt 6 số (5 phút, tối đa 5 lần thử, gửi lại sau 60 giây). Quên mật khẩu cũng dùng OTP và chỉ cấp quyền đặt mật khẩu trong session sau khi xác minh.
 - Chạy `database/migration_account_otp_video_upload.sql` trước khi khởi động để tránh lỗi Hibernate `ddl-auto=validate`. Migration cũng chuyển khóa ngoại `videos.CategoryId` sang `Category.cate_id`; với database cũ, video được ánh xạ danh mục cũ sang danh mục mới theo tên.
 - Tải video tại `/video`; danh sách của tài khoản được phân trang 6 video/trang. Khi tải lên, người dùng có thể yêu cầu gợi ý danh mục từ tiêu đề/mô tả đối chiếu tên sản phẩm và danh mục; cần xác nhận hoặc chọn lại danh mục trước khi lưu. Video không khớp rõ ràng sẽ yêu cầu chọn danh mục thủ công để xuất hiện đúng khi lọc. Hỗ trợ MP4, WebM, Ogg; thumbnail có thể nhập URL hoặc chọn ảnh PNG/JPG/GIF/BMP từ máy (tối đa 5 MB). Video lưu mặc định trong `uploads/videos`, thumbnail trong `uploads/video-thumbnails`; cả hai được phục vụ dưới `/uploads/...`. Có thể cấu hình `VIDEO_UPLOAD_DIR`, `APP_MAX_VIDEO_FILE_SIZE`, `APP_MAX_REQUEST_SIZE` và `APP_MAX_VIDEO_FILE_SIZE_BYTES`.
@@ -93,6 +115,16 @@ SELECT otpId, userId, purpose, createdAt, expiresAt, attempts, usedAt FROM dbo.A
 ## Test
 
 `mvnw.cmd clean test` chạy unit test dịch vụ, BCrypt/OTP, upload, role mapping và MockMvc authorization. Các test không phụ thuộc SQL Server/SMTP. Việc khởi động ứng dụng, gửi email thật, xác thực Windows Authentication và kiểm tra schema thật cần SMTP/SQL Server/JDBC Auth DLL đã cấu hình trên máy chạy ứng dụng.
+
+## SiteMesh và validation form
+
+- Project dùng Spring MVC + Thymeleaf. SiteMesh Decorator 3 được tích hợp bằng chính thức `org.sitemesh:spring-boot-starter-sitemesh:3.3.0` với integration `view-resolver`, tương thích Spring Boot 4.x, Java 17+ và Jakarta Servlet 6.1; không đăng ký Filter cũ, không dùng `javax.*`, không chuyển sang JSP.
+- Bootstrap Decorator dùng chung nằm tại `src/main/resources/templates/decorators/default.html` và được SiteMesh chọn làm view Thymeleaf. Cấu hình trong `application.properties` áp dụng cho các Spring MVC view. Decorator cung cấp HTML shell, Bootstrap CSS/JS và form-validation JS; nội dung trang tiếp tục giữ header, navbar, sidebar, footer và CSS riêng hiện có để không nhân đôi hoặc làm đổi giao diện.
+- Spring Security tiếp tục kiểm tra role ở backend cho `/admin/**`, `/manager/**`, `/cart/**`, `/checkout/**`, `/member/**`; frontend chỉ ẩn menu bổ sung, không thay quyền truy cập.
+- Các DTO form có Jakarta Validation cho đăng ký, quên mật khẩu, OTP, đặt lại mật khẩu, Category, Product, User, User Video và Checkout. Controller dùng `@Valid` và `BindingResult`; lỗi nghiệp vụ trùng dữ liệu hoặc bản ghi không tồn tại được xử lý riêng.
+- Spring Security vẫn kiểm tra role ở backend cho `/admin/**`, `/manager/**`, `/cart/**`, `/checkout/**`, `/member/**`; frontend chỉ ẩn menu bổ sung, không thay quyền truy cập.
+- Các DTO form có Jakarta Validation cho đăng ký, quên mật khẩu, OTP, đặt lại mật khẩu, Category, Product, User, User Video và Checkout. Controller dùng `@Valid` và `BindingResult`; lỗi nghiệp vụ trùng dữ liệu hoặc bản ghi không tồn tại được xử lý riêng.
+- Form HTML dùng `required`, `min`, `max`, `minlength`, `maxlength`, `pattern`, `type=email/number/password/file` và các class `is-invalid`/`invalid-feedback` của Bootstrap.
 
 ## chay test
 admin pass: 123456789

@@ -1,6 +1,8 @@
 package vn.iotstar.security;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,6 +24,10 @@ public class LoginFailureHandler implements AuthenticationFailureHandler {
         String reason = exception instanceof DisabledException ? "inactive"
                 : username == null || username.isBlank() ? "username"
                 : password == null || password.isBlank() ? "password" : "invalid";
-        response.sendRedirect(request.getContextPath() + "/login?error=" + reason);
+        String redirect = request.getContextPath() + "/login?error=" + reason;
+        if (username != null && !username.isBlank()) {
+            redirect += "&username=" + URLEncoder.encode(username.trim(), StandardCharsets.UTF_8);
+        }
+        response.sendRedirect(redirect);
     }
 }

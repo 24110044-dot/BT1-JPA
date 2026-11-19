@@ -7,6 +7,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 
 import java.util.List;
 
@@ -14,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -29,6 +33,7 @@ import vn.iotstar.service.IVideoService;
 
 @WebMvcTest(ProductController.class)
 @AutoConfigureMockMvc(addFilters = false)
+@ImportAutoConfiguration(org.sitemesh.autoconfigure.SiteMeshViewResolverAutoConfiguration.class)
 @Import(GlobalModelAdvice.class)
 class ProductFormViewTest {
 
@@ -89,7 +94,10 @@ class ProductFormViewTest {
 
         mockMvc.perform(get("/products"))
                 .andExpect(status().isOk())
-                .andExpect(view().name("shop/product-list"));
+                .andExpect(view().name("shop/product-list"))
+                .andExpect(content().string(containsString("bootstrap.min.css")))
+                .andExpect(content().string(containsString("class=\"shop-page\"")))
+                .andExpect(content().string(not(containsString("sitemesh:write"))));
     }
 
     @Test
