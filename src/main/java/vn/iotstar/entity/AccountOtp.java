@@ -29,6 +29,9 @@ public class AccountOtp {
     @Column(name = "purpose", nullable = false, length = 30)
     private String purpose;
 
+    @Column(name = "targetEmail", length = 254)
+    private String targetEmail;
+
     @Column(name = "codeHash", nullable = false, length = 100)
     private String codeHash;
 
@@ -62,6 +65,8 @@ public class AccountOtp {
     public void setUser(User user) { this.user = user; }
     public String getPurpose() { return purpose; }
     public void setPurpose(String purpose) { this.purpose = purpose; }
+    public String getTargetEmail() { return targetEmail; }
+    public void setTargetEmail(String targetEmail) { this.targetEmail = targetEmail; }
     public String getCodeHash() { return codeHash; }
     public void setCodeHash(String codeHash) { this.codeHash = codeHash; }
     public LocalDateTime getCreatedAt() { return createdAt; }

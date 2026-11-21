@@ -42,36 +42,70 @@ Trong VS Code, mở `src/main/java/vn/iotstar/util/PasswordHashGenerator.java`, 
 
 ### Email OTP và tải video
 
-- Sao chép `.env.example` để tham khảo các biến cần cấu hình. Spring Boot không tự đọc file `.env`; đặt các biến môi trường trong VS Code `launch.json`/terminal hoặc cấu hình môi trường của hệ điều hành. Không commit file `.env`.
-- Cấu hình `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD` (mật khẩu ứng dụng SMTP), `MAIL_FROM`, `MAIL_SMTP_AUTH` và `MAIL_SMTP_STARTTLS` bằng thông tin nhà cung cấp email của bạn. Không có thông tin SMTP mặc định trong source.
+- Trước khi chạy ứng dụng, tạo file `.env` ở thư mục gốc từ mẫu `.env.example`:
 
-#### Chạy Gmail SMTP trong PowerShell
+  ```powershell
+  Copy-Item .env.example .env
+  notepad .env
+  ```
 
-Thay `your-gmail@gmail.com` bên dưới bằng địa chỉ Gmail của bạn (cả `MAIL_USERNAME` và `MAIL_FROM`). Gmail yêu cầu bật xác minh 2 bước và tạo **Google App Password**; không nhập mật khẩu đăng nhập Gmail thông thường. App Password được nhập kín tại dấu nhắc, khoảng trắng sẽ được loại bỏ. Các biến chỉ tồn tại trong cửa sổ PowerShell hiện tại:
+- Điền giá trị thật vào `.env` trên máy chạy ứng dụng. `.env` chỉ dùng cho cấu hình riêng của máy; `.env.example` là mẫu để tạo file cấu hình khi thiết lập project.
+- Các biến cấu hình:
 
-```powershell
-$env:MAIL_HOST = "smtp.gmail.com"
-$env:MAIL_PORT = "587"
-$env:MAIL_USERNAME = "your-gmail@gmail.com"
-$env:MAIL_FROM = $env:MAIL_USERNAME
-$env:MAIL_SMTP_AUTH = "true"
-$env:MAIL_SMTP_STARTTLS = "true"
+  | Biến | Dùng cho | Hướng dẫn |
+  |---|---|---|
+  | `MAIL_HOST`, `MAIL_PORT` | Máy chủ SMTP | Gmail thường dùng `smtp.gmail.com` và cổng `587`. |
+  | `MAIL_USERNAME` | Tài khoản gửi OTP | Địa chỉ Gmail của bạn. |
+  | `MAIL_PASSWORD` | Xác thực SMTP | Dùng Google App Password; tài khoản Gmail cần bật xác minh 2 bước. Không dùng mật khẩu đăng nhập Gmail thông thường. |
+  | `MAIL_FROM` | Địa chỉ người gửi | Thường đặt bằng `MAIL_USERNAME`. |
+  | `MAIL_SMTP_AUTH`, `MAIL_SMTP_STARTTLS` | Xác thực và mã hóa SMTP | Giữ `true` cho Gmail. |
+  | `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | Upload ảnh đại diện | Lấy từ Cloudinary Dashboard; API Secret chỉ lưu trong `.env`. |
+  | `REMEMBER_ME_KEY` | Ký cookie Remember Me | Thay giá trị mẫu bằng một chuỗi ngẫu nhiên dài, riêng cho môi trường của bạn. |
+  | `VIDEO_UPLOAD_DIR`, `APP_MAX_VIDEO_FILE_SIZE`, `APP_MAX_REQUEST_SIZE`, `APP_MAX_VIDEO_FILE_SIZE_BYTES` | Lưu video và giới hạn upload | Có thể giữ giá trị mẫu nếu không muốn thay đổi giới hạn mặc định. |
 
-$secure = Read-Host "Nhập Google App Password" -AsSecureString
-$env:MAIL_PASSWORD = (New-Object System.Net.NetworkCredential("", $secure)).Password -replace '\s', ''
+#### Chạy trong VS Code với file `.env`
 
-Test-NetConnection smtp.gmail.com -Port 587
-.\mvnw.cmd spring-boot:run
+Spring Boot không tự đọc `.env`. VS Code Java debug configuration cần chỉ định file đó bằng thuộc tính `envFile`. Sau khi tạo `.env`, chọn **Run and Debug → Spring Boot-CategoryManagementApplication** rồi nhấn **F5**. Cấu hình chạy cần có các thiết lập tương tự sau (điều chỉnh `projectName` nếu tên Maven project của bạn khác):
+
+```json
+{
+  "type": "java",
+  "name": "Spring Boot-CategoryManagementApplication",
+  "request": "launch",
+  "cwd": "${workspaceFolder}",
+  "mainClass": "vn.iotstar.CategoryManagementApplication",
+  "projectName": "categorymanagementjpa",
+  "envFile": "${workspaceFolder}/.env",
+  "env": {
+    "PATH": "${env:PATH};${env:USERPROFILE}\\.m2\\repository\\com\\microsoft\\sqlserver\\mssql-jdbc_auth\\13.4.0.x64"
+  }
+}
 ```
 
-Tiếp tục chỉ khi `Test-NetConnection` hiển thị `TcpTestSucceeded : True`.
+`envFile` đưa các biến trong `.env` vào tiến trình Spring Boot; `application.properties` lấy chúng qua các placeholder như `${MAIL_HOST:}` và `${CLOUDINARY_API_SECRET:}`. `env.PATH` giúp JDBC Driver dùng Windows Authentication tìm Microsoft JDBC Auth DLL trong Maven cache. Nếu chưa có DLL ở đường dẫn trên, cài đúng phiên bản 13.4.0 và kiến trúc x64 tương ứng với JVM. Không chuyển sang SQL Server Authentication chỉ để xử lý thiếu DLL.
+
+Khi thiết lập project trên máy khác, tạo `.env` từ `.env.example`, điền cấu hình của môi trường đó và bảo đảm launch configuration có `envFile` trỏ đến `${workspaceFolder}/.env`. Nếu chạy `.\mvnw.cmd spring-boot:run` trực tiếp trong terminal, Maven không tự nạp `.env`; cần cung cấp các biến môi trường cho tiến trình theo cách riêng của terminal đó.
+
+#### Hồ sơ người dùng và Cloudinary
+
+Sau khi đăng nhập, truy cập `http://localhost:8080/profile`. Trang hồ sơ cho phép cập nhật họ tên, số điện thoại, ảnh đại diện và thay đổi email bằng OTP. `/member/myaccount` cũng được chuyển về trang hồ sơ chung.
+
+Chỉ ảnh JPEG, PNG hoặc WEBP, dung lượng tối đa 5 MB, được gửi lên Cloudinary từ backend. Không commit `CLOUDINARY_API_SECRET`. Khi thay đổi email, OTP 6 số có hiệu lực 5 phút, tối đa 5 lần nhập sai và thời gian chờ gửi lại 60 giây.
 
 - Đăng ký tài khoản sẽ gửi OTP kích hoạt 6 số (5 phút, tối đa 5 lần thử, gửi lại sau 60 giây). Quên mật khẩu cũng dùng OTP và chỉ cấp quyền đặt mật khẩu trong session sau khi xác minh.
 - Chạy `database/migration_account_otp_video_upload.sql` trước khi khởi động để tránh lỗi Hibernate `ddl-auto=validate`. Migration cũng chuyển khóa ngoại `videos.CategoryId` sang `Category.cate_id`; với database cũ, video được ánh xạ danh mục cũ sang danh mục mới theo tên.
 - Tải video tại `/video`; danh sách của tài khoản được phân trang 6 video/trang. Khi tải lên, người dùng có thể yêu cầu gợi ý danh mục từ tiêu đề/mô tả đối chiếu tên sản phẩm và danh mục; cần xác nhận hoặc chọn lại danh mục trước khi lưu. Video không khớp rõ ràng sẽ yêu cầu chọn danh mục thủ công để xuất hiện đúng khi lọc. Hỗ trợ MP4, WebM, Ogg; thumbnail có thể nhập URL hoặc chọn ảnh PNG/JPG/GIF/BMP từ máy (tối đa 5 MB). Video lưu mặc định trong `uploads/videos`, thumbnail trong `uploads/video-thumbnails`; cả hai được phục vụ dưới `/uploads/...`. Có thể cấu hình `VIDEO_UPLOAD_DIR`, `APP_MAX_VIDEO_FILE_SIZE`, `APP_MAX_REQUEST_SIZE` và `APP_MAX_VIDEO_FILE_SIZE_BYTES`.
 - Video cũ dùng YouTube ID và các trang `/videos` vẫn được giữ. Trang `/home` hiển thị tối đa 10 video đang bật mới nhất theo `UploadedAt`.
 
-Nếu driver báo thiếu DLL Windows Authentication, cần Microsoft JDBC Auth DLL phiên bản 13.4.0, kiến trúc x64/x86 đúng với JVM, trong `PATH`. Không chuyển sang SQL Authentication.
+Nếu chạy Maven trực tiếp và driver báo thiếu DLL Windows Authentication, cần Microsoft JDBC Auth DLL phiên bản 13.4.0, kiến trúc x64/x86 đúng với JVM, trong `PATH`. Khi chạy từ VS Code, launch configuration ở trên thêm thư mục DLL x64 trong Maven cache vào `PATH`. Nếu cần chạy thủ công trên máy x64, thêm thư mục DLL trong Maven cache vào `PATH`:
+
+```powershell
+$authDllDirectory = Join-Path $env:USERPROFILE ".m2\repository\com\microsoft\sqlserver\mssql-jdbc_auth\13.4.0.x64"
+$env:PATH = "$authDllDirectory;$env:PATH"
+.\mvnw.cmd spring-boot:run
+```
+
+Thư mục trên chỉ dùng được nếu `mssql-jdbc_auth-13.4.0.x64.dll` đã có trong cache. Nếu thiếu, cài Microsoft JDBC Auth DLL đúng phiên bản/kiến trúc từ gói phát hành chính thức của Microsoft hoặc Maven Central vào thư mục nằm trong `PATH`. Không tải DLL từ trang không đáng tin cậy và không chuyển sang SQL Server Authentication.
 
 ## Chạy trong VS Code
 
@@ -82,11 +116,7 @@ Nếu driver báo thiếu DLL Windows Authentication, cần Microsoft JDBC Auth 
    .\mvnw.cmd clean test package
    ```
 
-3. Chạy cấu hình `Spring Boot-CategoryManagementApplication` bằng **Run and Debug / F5**, hoặc:
-
-   ```powershell
-   .\mvnw.cmd spring-boot:run
-   ```
+3. Tạo `.env` từ `.env.example`, điền cấu hình local, sau đó chạy cấu hình `Spring Boot-CategoryManagementApplication` bằng **Run and Debug / F5**. Đảm bảo cấu hình có `envFile` trỏ đến `${workspaceFolder}/.env`.
 
 4. Truy cập `http://localhost:8080/login`.
 

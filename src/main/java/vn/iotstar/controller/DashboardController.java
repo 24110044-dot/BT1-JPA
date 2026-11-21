@@ -62,11 +62,6 @@ public class DashboardController {
         return "manager/dashboard";
     }
 
-    @GetMapping("/member/myaccount")
-    public String myAccount() {
-        return "member/myaccount";
-    }
-
     @GetMapping("/error/403")
     public String accessDenied() {
         return "error/403";

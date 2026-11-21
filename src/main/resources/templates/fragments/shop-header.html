@@ -20,7 +20,7 @@
                     </ul>
                 </div>
                 <a class="nav-link" th:if="${currentUser != null and !isAdmin and !isManager}" th:href="@{/member/orders}">Đơn hàng</a>
-                <a class="nav-link" th:if="${currentUser != null and !isAdmin and !isManager}" th:href="@{/member/myaccount}">Tài khoản</a>
+                <a class="nav-link" th:if="${currentUser != null}" th:href="@{/profile}">Tài khoản</a>
             </div>
             <form class="d-flex shop-search me-lg-3" method="get" th:action="@{/products}">
                 <input class="form-control form-control-sm" name="keyword" placeholder="Tìm sản phẩm..." aria-label="Tìm sản phẩm">
@@ -39,6 +39,7 @@
             </div>
             <div th:if="${currentUser != null and (isAdmin or isManager)}" class="d-flex align-items-center gap-2 mt-3 mt-lg-0">
                 <a class="btn btn-outline-primary btn-sm" th:href="${isAdmin} ? @{/admin/home} : @{/manager/home}">Khu vực quản trị</a>
+                <a class="btn btn-light btn-sm" th:href="@{/profile}">Tài khoản</a>
                 <form method="post" th:action="@{/logout}"><button class="btn btn-outline-secondary btn-sm">Thoát</button></form>
             </div>
         </div>

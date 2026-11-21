@@ -34,6 +34,7 @@ import vn.iotstar.controller.DashboardController;
 import vn.iotstar.controller.AuthController;
 import vn.iotstar.controller.UserController;
 import vn.iotstar.controller.UserVideoController;
+import vn.iotstar.controller.ProfileController;
 import vn.iotstar.security.CustomUserDetailsService;
 import vn.iotstar.security.RoleAuthenticationSuccessHandler;
 import vn.iotstar.service.ICategoryService;
@@ -44,10 +45,12 @@ import vn.iotstar.service.IVideoService;
 import vn.iotstar.service.AccountAuthService;
 import vn.iotstar.service.UserVideoService;
 import vn.iotstar.service.VideoCategorySuggestionService;
+import vn.iotstar.service.ProfileService;
 
 @WebMvcTest({ DashboardController.class, AuthController.class, CategoryController.class, UserController.class,
-        UserVideoController.class })
+        UserVideoController.class, ProfileController.class })
 @ImportAutoConfiguration({
+        org.sitemesh.autoconfigure.SiteMeshViewResolverAutoConfiguration.class,
         org.springframework.boot.security.autoconfigure.SecurityAutoConfiguration.class,
         org.springframework.boot.security.autoconfigure.web.servlet.ServletWebSecurityAutoConfiguration.class,
         org.springframework.boot.security.autoconfigure.web.servlet.SecurityFilterAutoConfiguration.class
@@ -74,6 +77,9 @@ class SecurityAuthorizationTest {
 
     @MockitoBean
     private VideoCategorySuggestionService videoCategorySuggestionService;
+
+    @MockitoBean
+    private ProfileService profileService;
 
     @MockitoBean
     private ICartService cartService;
@@ -188,6 +194,43 @@ class SecurityAuthorizationTest {
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("Chữ số thứ nhất")));
         mockMvc.perform(get("/video")).andExpect(status().is3xxRedirection());
         mockMvc.perform(get("/video/add")).andExpect(status().is3xxRedirection());
+    }
+
+    @Test
+    void anonymousUserCannotOpenProfilePage() throws Exception {
+        mockMvc.perform(get("/profile"))
+                .andExpect(status().is3xxRedirection());
+    }
+
+    @Test
+    void authenticatedUserProfileRendersThroughSiteMeshDecorator() throws Exception {
+        User user = new User();
+        user.setId(42);
+        user.setUserName("profile-user");
+        user.setEmail("profile@example.com");
+        user.setFullName("Profile User");
+        user.setPhone("09012345678");
+        user.setRoleid(5);
+        org.mockito.Mockito.when(profileService.getProfile(42)).thenReturn(user);
+        org.mockito.Mockito.when(accountAuthService.pendingEmailChange(42))
+                .thenReturn(java.util.Optional.empty());
+
+        mockMvc.perform(get("/profile")
+                .with(SecurityMockMvcRequestPostProcessors.user(new CustomUserDetails(user))))
+                .andExpect(status().isOk())
+                .andExpect(view().name("profile/index"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("bootstrap.min.css")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Profile User")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(
+                        org.hamcrest.Matchers.containsString("sitemesh:write"))));
+
+        mockMvc.perform(get("/member/myaccount")
+                .with(SecurityMockMvcRequestPostProcessors.user(new CustomUserDetails(user))))
+                .andExpect(status().isOk())
+                .andExpect(view().name("profile/index"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Quản lý hồ sơ")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(
+                        org.hamcrest.Matchers.containsString("sitemesh:write"))));
     }
 
     @Test
