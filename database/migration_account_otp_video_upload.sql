@@ -32,10 +32,6 @@ IF NOT EXISTS (SELECT 1 FROM sys.indexes
         ON dbo.AccountOtps(userId, purpose, createdAt DESC);
 GO
 
-IF COL_LENGTH(N'dbo.AccountOtps', N'targetEmail') IS NULL
-    ALTER TABLE dbo.AccountOtps ADD targetEmail NVARCHAR(254) NULL;
-GO
-
 IF OBJECT_ID(N'dbo.videos', N'U') IS NOT NULL
 BEGIN
     IF COL_LENGTH(N'dbo.videos', N'UserId') IS NULL

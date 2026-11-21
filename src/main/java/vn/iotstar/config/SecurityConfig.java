@@ -7,8 +7,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
-import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
@@ -26,16 +24,10 @@ public class SecurityConfig {
     }
 
     @Bean
-    SecurityContextRepository securityContextRepository() {
-        return new HttpSessionSecurityContextRepository();
-    }
-
-    @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http,
             CustomUserDetailsService userDetailsService,
             RoleAuthenticationSuccessHandler successHandler,
             LoginFailureHandler failureHandler,
-            SecurityContextRepository securityContextRepository,
             @Value("${app.security.remember-me-key}") String rememberMeKey) throws Exception {
         AccessDeniedHandler deniedHandler = (request, response, exception) -> {
             response.setStatus(HttpStatus.FORBIDDEN.value());
@@ -51,7 +43,6 @@ public class SecurityConfig {
                 .requestMatchers("/video/add", "/video/edit", "/video/suggest-category").authenticated()
                 .requestMatchers(HttpMethod.GET, "/video/{id}").permitAll()
                 .requestMatchers("/video", "/video/**").authenticated()
-                .requestMatchers("/profile", "/profile/**").authenticated()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/manager/**").hasAnyRole("ADMIN", "MANAGER")
                 .requestMatchers("/cart/**", "/checkout/**", "/member/orders/**").hasRole("USER")
@@ -59,7 +50,6 @@ public class SecurityConfig {
                 .requestMatchers("/member/**").authenticated()
                 .requestMatchers(HttpMethod.POST, "/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated())
-            .securityContext(context -> context.securityContextRepository(securityContextRepository))
             .formLogin(form -> form
                 .loginPage("/login")
                 .loginProcessingUrl("/login")
